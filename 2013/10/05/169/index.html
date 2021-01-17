@@ -1,0 +1,112 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> vim&amp;C&#43;&#43; 忘備録その１ </title>
+    
+	<link rel="stylesheet" href="http://blog.arcturu.com//css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/font-awesome.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/theme.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="blog.arc" />
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="http://blog.arcturu.com/">blog.arc</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>vim&amp;C&#43;&#43; 忘備録その１</h1>
+      <small class="post-meta">Oct 5, 2013</small>
+      <div class="post-content">
+        
+
+<p>随分と長い間プログラミングから離れていましたが、最近になってようやく勉強し直し始めました。この際なのでvimも使い始めてみました。そのなかで出会った問題の解決策を主に自分のためにまとめました。</p>
+
+<h2 id="1-c-コンパイラがない-osx-lion">1. C++コンパイラがない（OSX Lion）</h2>
+
+<p>どうやら最近のmacには標準でインストールされていないようなので、gccをXcode経由でインストールする。</p>
+
+<p><a href="http://qiita.com/ShinichiOkayama/items/962e55ac7f8920a5f007">Macにgccをインストールする</a></p>
+
+<h2 id="2-vim-でクリップボード経由のコピペができない">2. vim でクリップボード経由のコピペができない</h2>
+
+<p>mac 標準の vim は -clipboard でビルドされているせいで set clipboard = unnamed, autoselect などをしてもクリップボード経由のコピーアンドペーストができない。macvim をインストールするのも面倒なので何とかならないか調べたところ</p>
+
+<p><a href="http://www.smart-hacks.com/2012/04/macvim.html">Mac標準のvimでクリップボードが簡単に使えるように設定した</a></p>
+
+<p>こんな素敵な記事を見つけたので一件落着。</p>
+
+<h2 id="3-未解決-solarized-でビジュアルモードの色が変">3. 【未解決】solarized でビジュアルモードの色が変</h2>
+
+<p>ターミナルの標準色ではなんだかイメージしていた vim と違うのでカラースキーム solarized を適用してみたのだが、ビジュアルモードで選択部分の色がおかしい。シンタックスハイライトが消え、文字色と文字の背景色が共に似たような灰色になってしまうので非常に視認性が悪いのだ。色分けが消えるくらいならともかく文字が見えないのは不便なので何とかならないのか調べてみたところ</p>
+
+<p><a href="http://superuser.com/questions/625974/vim-solarized-in-visual-mode-loses-syntax-coloring-in-selection">vim solarized in visual mode loses syntax coloring in selection</a></p>
+
+<p>同じ症状にあっていると思われる人を発見。ただこの answer を試してみてもあまりしっくり来なかったので .vim/colors/solarized.vim の</p>
+
+<pre class="brush: plain">exe "hi! Visual" .s:fmt_none .s:fg_base01 .s:bg_base03 .s:fmt_revbb</pre>
+
+<p>を</p>
+
+<pre class="brush: plain">exe "hi! Visual" .s:fmt_none .s:fg_base02 .s:bg_base00 .s:fmt_revbb</pre>
+
+<p>に変え、とりあえず文字が見える状態にした。</p>
+
+<p>これでひと通り開発環境が整ったはず。vim を使うことになるんだったら6,500円も出してcoda2を買ったのが馬鹿みたい、というか馬鹿だなあ……。</p>
+
+        
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>blog.arc</h4>
+		<div class="row">
+			<div class="col-md-3">
+				<div class="form-group">
+					<p></p>
+					<a href="mailto:"></a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/"></a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/"></a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="http://blog.arcturu.com//js/jquery-2.1.4.min.js"></script>
+<script src="http://blog.arcturu.com//js/bootstrap.min.js"></script>
+
+  </body>
+</html>

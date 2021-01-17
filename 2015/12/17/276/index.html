@@ -1,0 +1,437 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> twoproc（的な何か）でインオーダパイプラインコアを書く </title>
+    
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/shortcodes.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="arcturu&#39;s posts" />
+    
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="twoproc（的な何か）でインオーダパイプラインコアを書く">
+<meta name="twitter:url" content="http://blog.arcturu.com/2015/12/17/276/">
+<meta name="twitter:description" content="これはCPU実験 Advent Calendar 2015の17日目の記事です。
+CPU 実験の 1st アーキテクチャとして実装したインオーダパイプラインコアについて
+ 構成 ハマったポイント  を中心にまとめました。
+完全なソースコードは https://github.com/arcturu/CarteletV1 にあります。
+twoprocとは twoproc とは VHDL のデザイン手法のひとつで、適当に書くとしっちゃかめっちゃかになりがちな VHDL コードの構造化と、バグの予防に非常に役立ちます。
+詳細については twoprocの書き方 と、リンク先ブログ内にあるスライドが非常にわかりやすいのでそちらを参照して下さい。
+僕が感じた twoproc を採用する直接的なメリットとしては
+ 意図しないラッチが発生しにくい ラッチを消しやすい 構造化されてわかりやすい (twoproc のメリットというよりも record 文のメリット) データの流れが理解しやすい  などがあります。
+パイプライン構成 パタヘネを参考に以下の四段構成にしました。
+ 命令フェッチ (Instruction Fetch: IF) デコード・レジスタアクセス (Instruction Decode / Register Read: ID) 実行 (Execute: EX) レジスタ書き戻し (Write Back: WB)  パタヘネでは五段目としてメモリアクセスフェーズがありますが、Cartelet v1 (1st アーキテクチャ) ではメモリリード命令も実行フェーズ内で完結させるようにしました。このようにした理由は、キャッシュメモリをつけるとヒット時とミス時でアクセスに必要なクロック数が変わり、それを違うパイプライン段で受けるのがしんどかったためです。
+Cartelet v1 ではリードに 0 クロックしかかからないフリップフロップのキャッシュを 16 個つけていますが、実行フェーズでの挙動は">
+
+
+
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">arcturu&#39;s posts</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>twoproc（的な何か）でインオーダパイプラインコアを書く</h1>
+      <small class="post-meta">2015年12月16日 16:25</small>
+      <div class="post-content">
+        
+
+<p>これは<a href="http://www.adventar.org/calendars/1056">CPU実験 Advent Calendar 2015</a>の17日目の記事です。</p>
+
+<p>CPU 実験の 1st アーキテクチャとして実装したインオーダパイプラインコアについて</p>
+
+<ul>
+<li>構成</li>
+<li>ハマったポイント</li>
+</ul>
+
+<p>を中心にまとめました。</p>
+
+<p>完全なソースコードは <a href="https://github.com/arcturu/CarteletV1">https://github.com/arcturu/CarteletV1</a> にあります。</p>
+
+<h2 id="twoprocとは">twoprocとは</h2>
+
+<p>twoproc とは VHDL のデザイン手法のひとつで、適当に書くとしっちゃかめっちゃかになりがちな VHDL コードの構造化と、バグの予防に非常に役立ちます。</p>
+
+<p>詳細については <a href="http://wasabiz.hatenablog.com/entry/2015/03/18/173921">twoprocの書き方</a> と、リンク先ブログ内にあるスライドが非常にわかりやすいのでそちらを参照して下さい。</p>
+
+<p>僕が感じた twoproc を採用する直接的なメリットとしては</p>
+
+<ul>
+<li>意図しないラッチが発生しにくい</li>
+<li>ラッチを消しやすい</li>
+<li>構造化されてわかりやすい (twoproc のメリットというよりも record 文のメリット)</li>
+<li>データの流れが理解しやすい</li>
+</ul>
+
+<p>などがあります。</p>
+
+<h2 id="パイプライン構成">パイプライン構成</h2>
+
+<p><a rel="nofollow" href="http://www.amazon.co.jp/gp/product/B00UJ42A0K/ref=as_li_ss_tl?ie=UTF8&#038;camp=247&#038;creative=7399&#038;creativeASIN=B00UJ42A0K&#038;linkCode=as2&#038;tag=arcturu-22">パタヘネ</a><img src="http://ir-jp.amazon-adsystem.com/e/ir?t=arcturu-22&#038;l=as2&#038;o=9&#038;a=B00UJ42A0K" width="1" height="1" border="0" alt="" style="border:none !important; margin:0px !important;" /></p>
+
+<p>を参考に以下の四段構成にしました。</p>
+
+<ul>
+<li>命令フェッチ (Instruction Fetch: IF)</li>
+<li>デコード・レジスタアクセス (Instruction Decode / Register Read: ID)</li>
+<li>実行 (Execute: EX)</li>
+<li>レジスタ書き戻し (Write Back: WB)</li>
+</ul>
+
+<p>パタヘネでは五段目としてメモリアクセスフェーズがありますが、Cartelet v1 (1st アーキテクチャ) ではメモリリード命令も実行フェーズ内で完結させるようにしました。このようにした理由は、キャッシュメモリをつけるとヒット時とミス時でアクセスに必要なクロック数が変わり、それを違うパイプライン段で受けるのがしんどかったためです。</p>
+
+<p>Cartelet v1 ではリードに 0 クロックしかかからないフリップフロップのキャッシュを 16 個つけていますが、実行フェーズでの挙動は</p>
+
+<ul>
+<li>キャッシュミス時 =&gt; 3 clk バブルが入る (4 clk で実行終了)</li>
+<li>キャッシュヒット時 =&gt; バブルは入らない (1 clk で実行終了)</li>
+</ul>
+
+<p>となります。</p>
+
+<h3 id="パイプライン化の方法">パイプライン化の方法</h3>
+
+<p>パイプラインという概念は本や講義では当たり前のように出てきて、「それ名前つけるほどのものでもなくね？」という感じがしつつも、実際に VHDL でどう書くのかと言われると少し詰まってしまうのではないでしょうか。僕はそうでした。</p>
+
+<a href="/images/2015-12-17/pipeline.png" class="ic">
+  <img src="/images/2015-12-17/pipeline.png" alt="pipeline" />
+</a>
+
+
+<p>こんな感じのパイプラインの概念図はよく目にしますが、以下の Cartelet v1 の cpu.vhd の抜粋と見比べるとほぼそのまま対応する部分があることがわかると思います。</p>
+
+<p><a href="https://github.com/arcturu/CarteletV1/blob/master/cpu.vhd">https://github.com/arcturu/CarteletV1/blob/master/cpu.vhd</a></p>
+
+<pre class="lang:default decode:true " title="cpu.vhd" >library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+use work.types.all;
+
+entity CPU is
+    port (
+        clk : in std_logic;
+        rst : in std_logic;
+        cpu_in : in cpu_in_type;
+        cpu_out : out cpu_out_type);
+end entity;
+
+architecture struct of CPU is
+    type fetch_readreg_reg_type is record
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        fetched : std_logic;
+        data : std_logic_vector (31 downto 0);
+    end record;
+    type readreg_ex_reg_type is record
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        data : std_logic_vector (31 downto 0);
+        ex_op : std_logic_vector (5 downto 0);
+        dest_num : std_logic_vector (4 downto 0);
+        dest_value : std_logic_vector (31 downto 0);
+        lhs_num : std_logic_vector (4 downto 0);
+        lhs_value : std_logic_vector (31 downto 0);
+        rhs_num : std_logic_vector (4 downto 0);
+        rhs_value : std_logic_vector (31 downto 0);
+        imm : std_logic_vector (15 downto 0);
+    end record;
+    type ex_wb_reg_type is record
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        dest_num : std_logic_vector (4 downto 0);
+        data_source : data_source_type;
+        sram_state : sram_state_type;
+        sram_addr : std_logic_vector (19 downto 0);
+        sram_data_to_be_written : std_logic_vector (31 downto 0);
+        write : std_logic;
+        data : std_logic_vector (31 downto 0);
+        next_pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+    end record;
+    type wb_mem_reg_type is record
+        sram_state : sram_state_type;
+        sram_data_to_be_written : std_logic_vector (31 downto 0);
+        dest_num : std_logic_vector (4 downto 0);
+    end record;
+    -- (cache などの type 宣言)
+    type reg_type is record
+        sram_cache : sram_cache_type;
+        sram_in_buf : std_logic_vector (31 downto 0);
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        bubble_counter : std_logic_vector (3 downto 0);
+        repeat : std_logic;
+        load_size : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        load_counter : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        forwarder_file : forwarder_file_type;
+        fetch_counter : std_logic_vector (3 downto 0);
+        fetch_readreg_reg2 : fetch_readreg_reg_type;
+        readreg_ex_reg : readreg_ex_reg_type;
+        ex_wb_reg : ex_wb_reg_type;
+        wb_mem_reg : wb_mem_reg_type;
+        regs : registers_type;
+        fregs : registers_type;
+        fpcond : std_logic;
+        alu_in : alu_in_type;
+        fpu_in : fpu_in_type;
+        cpu_state : cpu_state_type;
+    end record;
+    constant reg_init : reg_type := (
+        sram_cache =&gt; (others =&gt; (
+            data =&gt; (others =&gt; '0'),
+            valid =&gt; '0',
+            tag =&gt; (others =&gt; '0'))),
+        -- (略)
+        cpu_state =&gt; ready);
+begin
+--    pmem : dmem_sim port map (
+    pmem : mem port map (
+        clka =&gt; clk,
+        wea =&gt; pmem_we,
+        addra =&gt; pmem_addr,
+        dina =&gt; pmem_din,
+        douta =&gt; pmem_dout);
+
+    alu_0 : alu port map (
+        clk =&gt; clk,
+        rst =&gt; '0',
+        alu_in =&gt; alu_in,
+        alu_out =&gt; alu_out);
+
+    fpu_0 : fpu port map (
+        clk =&gt; clk,
+        rst =&gt; '0',
+        fpu_in =&gt; fpu_in,
+        fpu_out =&gt; fpu_out);
+
+
+    comb : process (cpu_in, r, pmem_dout, alu_out, fpu_out)
+        variable v : reg_type;
+        -- (略: reg_type に入れる程でもない(次のクロックまで記憶する必要が無い) variables)
+    begin
+        v := r;
+        cpu_ex_rst8 := '0';
+        cpu_ex_go := '0';
+        -- (略: variable の初期化)
+        inst := (others =&gt; '0');
+        case r.cpu_state is
+-- この辺はプログラムローダ ----------------------------------------------------------------------
+            when ready =&gt;
+                -- (略: プログラムローダと実行モードの切り替えをしている)
+            when ploading =&gt;
+                -- (略: プログラムメモリにプログラムを書き込む)
+            when dloading =&gt;
+                -- (略: データメモリ(SRAM) に .data 領域のデータを書き込む)
+            when running =&gt;
+                pmem_we &lt;= (others =&gt; '0');
+
+                v_forwarder := r.forwarder_file(0);
+-- write back -----------------------------------------------------------------------------
+                if r.repeat = '0' then
+                    v.forwarder_file(1) := r.forwarder_file(0);
+                    if r.ex_wb_reg.write = '1' then
+                        case r.ex_wb_reg.data_source is
+                            when src_alu =&gt;
+                                tmp_data := alu_out.data;
+                                v.regs (to_integer(unsigned(r.ex_wb_reg.dest_num))) := tmp_data;
+                                v.forwarder_file(0).floating := '0';
+                                v_forwarder.floating := '0';
+                           -- (略: alu 以外の演算器からの出力データを処理
+                        end case;
+                        v.forwarder_file(0).reg_num := r.ex_wb_reg.dest_num;
+                        v_forwarder.reg_num := r.ex_wb_reg.dest_num;
+                        v.forwarder_file(0).valid := '1';
+                        v_forwarder.valid := '1';
+                        v.forwarder_file(0).value := tmp_data;
+                        v_forwarder.value := tmp_data;
+                    elsif v.repeat = '0' then
+                        v.forwarder_file(0).valid := '0';
+                        v_forwarder.valid := '0';
+                    end if;
+                end if;
+
+-- execute -------------------------------------------------------------------------------------
+                --      forwarding
+                ex_lhs_value := r.readreg_ex_reg.lhs_value;
+                ex_rhs_value := r.readreg_ex_reg.rhs_value;
+                ex_dest_value := r.readreg_ex_reg.dest_value;
+
+                -- (略: フォワーディングされてきたデータを ex_lhs_value などに入れる)
+
+                flush_read := '0';
+                if r.bubble_counter = x"0" then
+                    v.ex_wb_reg.pc := r.readreg_ex_reg.pc;
+                    v.ex_wb_reg.write := '0';
+                    v.ex_wb_reg.sram_state := idle;
+                end if;
+                case r.readreg_ex_reg.ex_op is
+                    when OP_ADD =&gt;
+                        v.ex_wb_reg.dest_num := r.readreg_ex_reg.dest_num;
+                        v.ex_wb_reg.write := '1';
+                        v.ex_wb_reg.data_source := src_alu;
+                        v.alu_in.command := ALU_ADD;
+                        v.alu_in.lhs := ex_lhs_value;
+                        v.alu_in.rhs := ex_rhs_value;
+                    when OP_ADDI =&gt;
+                    -- (略: 個々の命令の処理)
+                    when others =&gt;
+                end case;
+                if v.bubble_counter = x"0" and flush_read = '0' and v.repeat = '0' and no_fetch = '0' then
+                    v.pc := std_logic_vector(unsigned(v.pc) + 1); -- pc すすめる
+                end if;
+
+-- read and decode -----------------------------------------------------------------------------
+                -- (略: デコードして v.readreg_ex_reg を更新)
+
+-- fetch ---------------------------------------------------------------------------------------
+                v_pmem_addr := v.pc;
+                if v.bubble_counter = x"0" and flush_read = '0' and v.repeat = '0' and no_fetch = '0' then -- v なのは意図的です
+--                    v.fetch_readreg_reg2.pc := r.fetch_readreg_reg.pc;
+                    v.fetch_readreg_reg2.pc := v.pc;
+                    v.fetch_readreg_reg2.fetched := '0';
+                end if;
+
+                v.sram_in_buf := cpu_in.sram_din;
+            when others =&gt;
+                pmem_we &lt;= (others =&gt; '0');
+        end case;
+
+-- 計算結果を出力 -------------------------------------------------------------------------------
+        cpu_out.ex_pop8 &lt;= cpu_ex_pop8;
+        cpu_out.sram_we &lt;= cpu_ex_sram_we;
+        cpu_out.sram_addr &lt;= cpu_ex_sram_addr;
+        cpu_out.sram_dout &lt;= cpu_ex_sram_dout;
+        cpu_out.ex_rst8 &lt;= cpu_ex_rst8;
+        cpu_out.state &lt;= r.cpu_state;
+        cpu_out.ex_go &lt;= cpu_ex_go;
+        cpu_out.ex_data &lt;= cpu_ex_data;
+        pmem_addr &lt;= v_pmem_addr;
+        pmem_din &lt;= v_pmem_din;
+        fpu_in &lt;= v.fpu_in;
+        alu_in &lt;= v.alu_in;
+        v.regs (0) := (others =&gt; '0'); -- must be zero
+        rin &lt;= v;
+    end process;
+    reg : process (clk)
+    begin
+        if rising_edge(clk) then
+            r &lt;= rin;
+        end if;
+    end process;
+end struct;</pre>
+
+<p>ここで、データが流れる順序としては IF, ID, EX, WB なのにコード中では WB, EX, ID, IF の順に書いてあるのはこうすることでフォワーディングが自然に書ける（WB に来た計算済みデータを variable として EX に流し、EX のオペランドの値としてつかえるようにすればフォワーディングできる）ためです。ただあんまりステージ間を跨いだ variable をつかいまくるとそれがクリティカルパスになり、何のためにパイプライン化しているのかわからなくなってくるので、ステージを跨いだ variable は可能な限り減らさないと周波数が上がりません。Cartelet v1 ではフォワーディング周りがクリティカルパスになっています。</p>
+
+<p>また、CPU モジュールから ALU, FPU などは切り出していますが、ここへの入力には v.alu_in や v.fpu_in という variable をつないでいます。v.alu_in などは EX フェーズで変更され、そのクロックのうちに ALU に入れたいからです。これを v.alu_in でなく r.alu_in とすると、EX フェーズで v.alu_in を変更した次のクロックで ALU にデータが入る事になり、1クロック遅れます。そもそも reg_type の中に alu_in などを入れずに、ALU の入力に直に EX フェーズで入れてしまえばいいような気がしますが、それをすると ALU を使わない命令 (fadd など) 時にも ALU の入力をいれる事を忘れがちです。これを忘れると ALU の入力にはラッチが生える（クロックの立ち上がり時にデータを拾い、次のクロックの立ち上がり時まで記憶するフリップフロップ動作ではなく、クロックの立ち上がり後も、Hi の間はデータの変化を拾い続けるラッチ動作になる）ことで xst (合成ツール) のタイミング制約判定が甘くなり？本来あるべきクリティカルパスが見えなくなる事があります（このあたりの原理はよく理解していませんが問題が起きることは確かです）。ALU の場合はとくに問題になりませんが、パスが伸びがちな FPU との接続部分にラッチが生えるとクリティカルなバグになることがあります。僕は FPU をつなぐときにラッチができていたのが原因で、マンデルブロ集合を描くサンプルプログラムを実行した時に、実行するたびに結果が変わった（しかも破壊されている）ことがあります。</p>
+
+<p>〜破壊された mandelbrot の例〜</p>
+
+<a href="/images/2015-12-17/mandelbrot.png" class="ic">
+  <img src="/images/2015-12-17/mandelbrot.png" alt="broken mandelbrot" />
+</a>
+
+
+<p>ラッチへの対処法としては、signal への代入が全場合分けで尽くされているかどうかをチェックすることと、ラッチができると xst が</p>
+
+<p>&#8220;WARNING:Xst:737 &#8211; Found n-bit latch for signal <name>.&#8221;</p>
+
+<p>のような warning を出すのでこれを見落とさずにしっかり直すことに尽きます。コードが長くなってくると数百個の warning が出ることがザラにあるので warning への感度がさがりますが、ラッチだけは絶対に消すように心がけています。</p>
+
+<h2 id="まとめ">まとめ</h2>
+
+<ul>
+<li>インオーダパイプラインでキャッシュ付きのメモリをうまいことするのは難しい</li>
+<li>データパスと逆向きに記述するとうまくいく</li>
+<li>ラッチは消す</li>
+</ul>
+
+<p>Cartelet v1 のスペックは 39億命令 88MHz 102.7s (IPC 0.43) です。</p>
+
+<p>今は OoO superscalar な 2nd アーキテクチャ Cartelet 2 を書いています。メモリ周りと分岐を上手いことしたいと思います。</p>
+
+<h3 id="おまけ">おまけ</h3>
+
+<p>（左）フォワーディングのバグによって壊れたレイトレ画像</p>
+
+<p>（右）正しい画像</p>
+
+<div class="clearfix">
+  <a href="/images/2015-12-17/min-rt6.png"><img src="/images/2015-12-17/min-rt6.png" width="300px" alt="min-rt6" /></a>
+  <a href="/images/2015-12-17/min-rt.png"><img src="/images/2015-12-17/min-rt.png" width="300px" alt="min-rt" /></a>
+</div>
+
+<p>一見まともそうですが、ゴミがついていたりグラデーションが変だったりします。</p>
+
+<p>原因を調べた所、出力ユニットのキューがあふれた場合に実行がストールするとフォワーディングが壊れて RAW ハザードが起きていたようでした。</p>
+
+        <div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "arcturu" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>arcturu&#39;s posts</h4>
+		<div class="row">
+
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/arcturu">arcturu</a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/_arcturu">_arcturu</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+
+
+  </body>
+</html>

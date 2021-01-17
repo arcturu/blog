@@ -1,0 +1,116 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> mac の メモ.app (Notes.app) の内容を csv で出力する </title>
+    
+	<link rel="stylesheet" href="http://blog.arcturu.com//css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/font-awesome.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/theme.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="blog.arc" />
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="http://blog.arcturu.com/">blog.arc</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>mac の メモ.app (Notes.app) の内容を csv で出力する</h1>
+      <small class="post-meta">Jan 10, 2015</small>
+      <div class="post-content">
+        <p>Mac 標準のメモアプリは iCloud 経由で iOS 端末同士自動同期してくれるため便利です。</p>
+
+<p>しかし、メモの実体がどこにあるのかよくわからない。</p>
+
+<p>このままだと気持ち悪いのでメモの内容を csv で出力する方法を調べました。</p>
+
+<p>メモの実体はここ</p>
+
+<pre class="lang:default decode:true ">~/Library/Containers/com.apple.Notes/Data/Library/Notes/NotesV3.storedata</pre>
+
+<p>にあります（&#8221;NotesV3&#8243; の部分は メモ.app のバージョンによって変わると思われる）。</p>
+
+<p>これは sqlite のデータベースファイルで、コマンドラインから</p>
+
+<pre class="lang:default decode:true">sqlite3 ~/Library/Containers/com.apple.Notes/Data/Library/Notes/NotesV3.storedata</pre>
+
+<p>と叩いてやると sqlite の対話環境に入ることができます。</p>
+
+<p>メモ本体は znotesbody テーブルにあるので sqlite で</p>
+
+<pre class="lang:default decode:true">select * from znotebody;</pre>
+
+<p>を実行してやれば html で書かれた全てのメモの内容が得られます。</p>
+
+<p>外部ファイルにエクスポートする場合には</p>
+
+<pre class="lang:default decode:true ">.mode csv
+.output hoge.csv
+select * from znotebody;
+.output stdout</pre>
+
+<p>とすればカレントディレクトリに hoge.csv が作られ、その中に select の結果が出力されます。</p>
+
+<p>【参考】</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/6076984/how-to-export-the-results-of-my-query-to-csv-file-sqlite" target="_blank">How to export the results of my query to csv file. Sqlite</a></li>
+<li><a href="http://superuser.com/questions/464679/where-does-os-x-mountain-lion-store-notes-data" target="_blank">Where does OS X Mountain Lion store Notes data?</a></li>
+</ul>
+
+        
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>blog.arc</h4>
+		<div class="row">
+			<div class="col-md-3">
+				<div class="form-group">
+					<p></p>
+					<a href="mailto:"></a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/"></a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/"></a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="http://blog.arcturu.com//js/jquery-2.1.4.min.js"></script>
+<script src="http://blog.arcturu.com//js/bootstrap.min.js"></script>
+
+  </body>
+</html>

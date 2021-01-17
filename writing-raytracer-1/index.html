@@ -1,0 +1,257 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> レイトレーサー開発日記 (1) </title>
+    
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/shortcodes.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="arcturu&#39;s posts" />
+    
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="レイトレーサー開発日記 (1)">
+<meta name="twitter:url" content="http://blog.arcturu.com/writing-raytracer-1/">
+<meta name="twitter:description" content="講義の課題でレイトレーサーを書いています。せっかくなので開発日記をつけることにしました。
+リポジトリは学期期間中に公開してはいけないということなので 8 月頃に出すつもりです。
+2017.04.27 [N/A] 名前 (sparkler) を考えてリポジトリを作った。
+2017.05.02 [N/A] .obj のパーサーを書いた。
+v, vn, f だけ実装した。
+Makefile の書き方を調べていて GNU make のパターンルールを初めて明示的に知った。
+C&#43;&#43; で書いている。
+2017.05.05 [19520 ms] 動いた。
+(下図) 初めて出たもの
+ カラフルなのは法線マップを RGB で表示しているため。
+レイトレーサーは絵を出すだけなら簡単。カメラ調整がやや難しかった。
+実装直後に走らせて真っ暗な画像しか出なかったときは悲しくなった (カメラ位置・方向の問題)。
+(下図) 動いていそうだったので lambertian と点光源でシェーディングしたらバグっていた。
+ 典型的な頂点法線補完のバグだった。
+(下図) 修正後
+ (下図) 角度調整後
+ 今後このシーンをパフォーマンスの基準に使う。
+今日の結果は 19.52s! (time コマンドで計測) 高速化し甲斐があるとも言えるがびっくりするくらい遅い。
+ちなみに以降の結果は n 回の平均というわけではなく、適当に数回レンダリングしてみてだいたい平均っぽいな〜という値を取っている。
+2017.05.06 [450 ms] .obj の構文を拡張する形でカメラの情報をジオメトリ定義ファイルに持たせた。
+Bounding Volume Hierarchy (BVH) を実装した。[11000 ms]">
+
+  <meta name="twitter:image" content="http://blog.arcturu.com/images/writing-raytracer/out8.png">
+
+
+
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">arcturu&#39;s posts</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>レイトレーサー開発日記 (1)</h1>
+      <small class="post-meta">2017年5月12日 17:05</small>
+      <div class="post-content">
+        
+
+<p>講義の課題でレイトレーサーを書いています。せっかくなので開発日記をつけることにしました。<br>
+リポジトリは学期期間中に公開してはいけないということなので 8 月頃に出すつもりです。</p>
+
+<h3 id="2017-04-27-n-a">2017.04.27 [N/A]</h3>
+
+<p>名前 (sparkler) を考えてリポジトリを作った。</p>
+
+<h3 id="2017-05-02-n-a">2017.05.02 [N/A]</h3>
+
+<p>.obj のパーサーを書いた。<br>
+v, vn, f だけ実装した。<br>
+Makefile の書き方を調べていて GNU make のパターンルールを初めて明示的に知った。<br>
+C++ で書いている。</p>
+
+<h3 id="2017-05-05-19520-ms">2017.05.05 [19520 ms]</h3>
+
+<p>動いた。<br>
+(下図) 初めて出たもの<br>
+<a href="/images/writing-raytracer/out1.png" class="it">
+  <img src="/images/writing-raytracer/out1.png" alt="first output" style="max-width: 200px" />
+</a>
+</p>
+
+<p>カラフルなのは法線マップを RGB で表示しているため。<br>
+レイトレーサーは絵を出すだけなら簡単。カメラ調整がやや難しかった。<br>
+実装直後に走らせて真っ暗な画像しか出なかったときは悲しくなった (カメラ位置・方向の問題)。<br>
+(下図) 動いていそうだったので lambertian と点光源でシェーディングしたらバグっていた。</p>
+
+<a href="/images/writing-raytracer/out5.png" class="it">
+  <img src="/images/writing-raytracer/out5.png" alt="first output" style="max-width: 200px" />
+</a>
+
+
+<p>典型的な頂点法線補完のバグだった。<br>
+(下図) 修正後</p>
+
+<a href="/images/writing-raytracer/out6.png" class="it">
+  <img src="/images/writing-raytracer/out6.png" alt="output" style="max-width: 200px" />
+</a>
+
+
+<p>(下図) 角度調整後</p>
+
+<a href="/images/writing-raytracer/out8.png" class="it">
+  <img src="/images/writing-raytracer/out8.png" alt="output" style="max-width: 200px" />
+</a>
+
+
+<p>今後このシーンをパフォーマンスの基準に使う。<br>
+今日の結果は 19.52s! (time コマンドで計測) 高速化し甲斐があるとも言えるがびっくりするくらい遅い。<br>
+ちなみに以降の結果は n 回の平均というわけではなく、適当に数回レンダリングしてみてだいたい平均っぽいな〜という値を取っている。</p>
+
+<h3 id="2017-05-06-450-ms">2017.05.06 [450 ms]</h3>
+
+<p>.obj の構文を拡張する形でカメラの情報をジオメトリ定義ファイルに持たせた。<br>
+Bounding Volume Hierarchy (BVH) を実装した。[11000 ms]<br>
+プロファイラをかけたところコピーコンストラクタが馬鹿にならないコストになっていた。<br>
+(下図) intersectTriangle に Face と Ray を値渡ししている。</p>
+
+<a href="/images/writing-raytracer/profiler.png" class="ic">
+  <img src="/images/writing-raytracer/profiler.png" alt="profiler" />
+</a>
+
+
+<p>早すぎる最適化は悪と言っても、const 参照渡しは最初からやってもいいと思った。<br>
+初めてプロファイラをまともに使ったけどとても便利だった。<br>
+[6000 ms] コピーコスト削減<br>
+[3500 ms] -O3<br>
+[540 ms] 分割アルゴリズム改善 (今までは一番長い軸を半分に切っていたが、いろんな切り方を試して一番左右均等に切れるところで切るようにした)<br>
+[450 ms] インライン化<br></p>
+
+<h3 id="2017-05-07-450-ms">2017.05.07 [450 ms]</h3>
+
+<p>光源の設定を .obj ファイルに書けるようにした。<br></p>
+
+<h3 id="2017-05-09-280-ms">2017.05.09 [280 ms]</h3>
+
+<p>コマンドライン出力をキレイにした。プロファイルっぽいものも内部で取るようにした。</p>
+
+<p>before</p>
+
+<a href="/images/writing-raytracer/cli-before.png" class="it">
+  <img src="/images/writing-raytracer/cli-before.png" alt="before" style="max-width: 200px" />
+</a>
+
+
+<p>after</p>
+
+<a href="/images/writing-raytracer/cli-after.png" class="it">
+  <img src="/images/writing-raytracer/cli-after.png" alt="after" style="max-width: 200px" />
+</a>
+
+
+<p>[380 ms] もっと const 参照<br>
+[320 ms] Surface Area Heuristic (SAH) 実装<br>
+[280 ms] 分割をやめる要素数をチューニング</p>
+
+<h3 id="2017-05-11-81-ms">2017.05.11 [81 ms]</h3>
+
+<p>頂点法線が設定されていない場合の面の法線の方向が逆だった、とかいう小さなバグを潰しつつ、</p>
+
+<p>[160 ms] intersectBox (BVH の各ノードボックスとレイの衝突判定) を手でループアンローリング（自作 3D ベクタ型の operator[] の実装が頭悪くて生のアクセスのほうが速かった）<br>
+[100 ms] BVH の traverse を再帰からループにした（アセンブリ見てたらスタック退避コストが大きそうだったので）<br>
+[81 ms] 不要なメモリ確保を抑制</p>
+
+<p>teapot のシーンで 1Mrps (Mega rays per second) をようやく超えられたのでうれしい。</p>
+
+<p>intersectBox 内を SIMD 化してみたが、[91 ms] と遅くなった。メモリアクセスコストに負けたか。</p>
+
+<p>rand() をシーケンシャルに配列に書き込むコード (下囲) を -O3 でビルドすると手元の環境では 128 M loops per sec ほどになるので、きっと 100M のオーダーは無理なんだろうと思う。10Mrps / thread くらいはいけるのかもしれない。</p>
+
+<pre><code>#include &lt;iostream&gt;
+#include &lt;vector&gt;
+
+#define MS(x) std::chrono::duration_cast&lt;std::chrono::milliseconds&gt;(x).count()
+typedef std::chrono::high_resolution_clock Clock;
+
+int main() {
+  const int N = 100000000;
+  std::vector&lt;int&gt; xs;
+  xs.resize(N);
+  auto t1 = Clock::now();
+  for (int i = 0; i &lt; N; i++) {
+    xs[i] = rand();
+  }
+  auto t2 = Clock::now();
+  std::cout &lt;&lt; (double)N / MS(t2 - t1) * 1000 / 1000 / 1000 &lt;&lt; &quot; (M loops per sec)&quot; &lt;&lt; std::endl;
+  // =&gt; 127 Mlps
+  return 0;
+}
+
+</code></pre>
+
+        <div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "arcturu" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>arcturu&#39;s posts</h4>
+		<div class="row">
+
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/arcturu">arcturu</a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/_arcturu">_arcturu</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+
+
+  </body>
+</html>

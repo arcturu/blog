@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>雑記 on blog.arc</title>
+    <link>http://blog.arcturu.com/categories/%E9%9B%91%E8%A8%98/index.xml</link>
+    <description>Recent content in 雑記 on blog.arc</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-JP</language>
+    <atom:link href="/categories/%E9%9B%91%E8%A8%98/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Time is energy.</title>
+      <link>http://blog.arcturu.com/2014/02/15/196/</link>
+      <pubDate>Fri, 14 Feb 2014 17:20:47 +0000</pubDate>
+      
+      <guid>http://blog.arcturu.com/2014/02/15/196/</guid>
+      <description>&lt;p&gt;僕の一日の消費エネルギーは&lt;a href=&#34;http://www.diet-pinky.com/check/shouhi.php&#34; target=&#34;_blank&#34;&gt;2300kcal&lt;/a&gt;とのこと。仕事率にすると約112Wになります。案外省エネ？&lt;/p&gt;
+
+&lt;p&gt;トイレの白熱電球(60W)二つ分弱で人が動くと考えればかなり優秀なんじゃないか。ただ&lt;a href=&#34;http://pxv.blog.fc2.com/blog-entry-56.html&#34; target=&#34;_blank&#34;&gt;iPadの消費電力は十数W&lt;/a&gt;とか言われてしまうとコスパ的には負けている気がしなくもない。&lt;/p&gt;
+
+&lt;p&gt;世界人口を70億人、一日あたりの平均供給エネルギー(=消費エネルギーと仮定)を3000kcalと仮定する。(&lt;a href=&#34;http://www2.ttcn.ne.jp/honkawa/0100.html&#34; target=&#34;_blank&#34;&gt;&lt;a href=&#34;http://www2.ttcn.ne.jp/honkawa/0100.html&#34;&gt;http://www2.ttcn.ne.jp/honkawa/0100.html&lt;/a&gt;&lt;/a&gt; を見るとこのくらい。うわっ…私の消費カロリー、低すぎ…？というか世界毎食平均1000kcalって食べ過ぎじゃないか)&lt;/p&gt;
+
+&lt;p&gt;すると一日に人類が(生体維持のために)消費するエネルギーは70* 10^8* 3000* 10^3 *4.2J = 88PJとなって、仕事率に直すと&lt;del datetime=&#34;2014-04-12T06:59:40+00:00&#34;&gt;88TW&lt;/del&gt;1TW。&lt;a href=&#34;http://ja.wikipedia.org/wiki/地球のエネルギー収支&#34; target=&#34;_blank&#34;&gt;地球が得るエネルギーは毎秒174PJ&lt;/a&gt;らしいので結局地球が得るエネルギーの&lt;del datetime=&#34;2014-04-12T06:59:40+00:00&#34;&gt;0.05%&lt;/del&gt;0.00059%は人類の命のために使われている計算になる。&lt;del datetime=&#34;2014-04-12T06:59:40+00:00&#34;&gt;あれっ、多すぎないか？&lt;/del&gt;まあ妥当か？&lt;/p&gt;
+
+&lt;p&gt;今日は眠いのであとで検算しよう。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>みんなぼっちの定理</title>
+      <link>http://blog.arcturu.com/2012/04/18/131/</link>
+      <pubDate>Wed, 18 Apr 2012 12:27:40 +0000</pubDate>
+      
+      <guid>http://blog.arcturu.com/2012/04/18/131/</guid>
+      <description>&lt;p&gt;すべて人間はぼっちである。これは数学的帰納法によって容易に証明することができる。&lt;/p&gt;
+
+&lt;p&gt;【証明】&lt;/p&gt;
+
+&lt;p&gt;「n人からなる集団を構成する人間はすべてぼっちである」……P(n)&lt;/p&gt;
+
+&lt;p&gt;このP(n)がすべての自然数nについて成立すれば、題意は満たされる。&lt;/p&gt;
+
+&lt;p&gt;(1)n=1のとき、&lt;/p&gt;
+
+&lt;p&gt;構成する人数が一人だから自分以外の人はいないので、ぼっちの定義(友達が一人もいない)よりP(1)は成立。&lt;/p&gt;
+
+&lt;p&gt;(2)P(n)が成立する(n人からなる集団を構成する人間はすべてぼっちである)と仮定すると、P(n+1)は、&lt;/p&gt;
+
+&lt;p&gt;(n+1人の集団)=&lt;/p&gt;
+
+&lt;p&gt;(n人のぼっち集団)+(1人の新参者)=&lt;/p&gt;
+
+&lt;p&gt;(n+1人のぼっち集団)&lt;/p&gt;
+
+&lt;p&gt;したがってP(n+1)も成立。&lt;/p&gt;
+
+&lt;p&gt;よって(1)(2)から、すべての自然数nについてP(n)は成立。&lt;/p&gt;
+
+&lt;p&gt;以上より題意は満たされた。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

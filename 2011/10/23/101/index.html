@@ -1,0 +1,208 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> ActionScript 3.0でハマったこと（PHPとの連携とか） </title>
+    
+	<link rel="stylesheet" href="http://blog.arcturu.com//css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/font-awesome.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/theme.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="blog.arc" />
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="http://blog.arcturu.com/">blog.arc</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>ActionScript 3.0でハマったこと（PHPとの連携とか）</h1>
+      <small class="post-meta">Oct 23, 2011</small>
+      <div class="post-content">
+        <p>所々の都合でActionScriptを書くことになったのですが、PHPとの連携でハマったことをまとめておきます。</p>
+
+<p>【PHP/AS3(Flash)の連携】</p>
+
+<p>今回はPHPで設定された値をAS側に受け渡すコードを書きました。まず、いろいろ調べてみたら</p>
+
+<p>PHP側で&#8221;test.swf?param=value&#8221;みたいに、GETリクエストを送信するような形でデータを渡し、ASの受信側は</p>
+
+<pre class="brush:as3">var value:String
+= mx.core.Application.application.parameters.value;
+</pre>
+
+<p>で受け取れると書いてあったのでこれでやりました。</p>
+
+<p>しかし、まず<span style="color: #ff0000;">mx.core.Application.application.parameters.valueが見当たらない！</span></p>
+
+<p>エラーメッセージは<strong>「null のオブジェクト参照のプロパティまたはメソッドにアクセスすることはできません。」</strong>です</p>
+
+<p>ちなみにFlashDevelopでFlex4.5.1,ActionScript3.0を使ってコーディングしています。</p>
+
+<p>さあ困った。それから原因を探していたらどうやらApplication.applicationは廃止されていたようです。</p>
+
+<p>その次に、</p>
+
+<pre class="brush:as3">_root.value
+</pre>
+
+<p>で受け取れるよ！というのを見つけてやってみましたがここでも<span style="color: #ff0000;">未定義の_rootにアクセスしてるよ！</span>と怒られました。（Access of undefined property _root.）</p>
+
+<p>どうやらAS2まではいけたようですが、これも３で廃止されてしまったそう。途方にくれていると、</p>
+
+<pre class="brush:as3">mx.core.FlexGlobals.topLevelApplication.parameters.value
+</pre>
+
+<p>で受け取れるよ！というのを見つけました。いい加減できるだろうと思っていたのに、コードを書いてみるとIDEさんがサジェストしてくれない。</p>
+
+<p>「またApplication.applicationの二の前か……」と殆ど諦めてはいましたがビルドだけはしてみるとなんとエラーは出ないではありませんか！出力もされてないけど！ちなみにエラーメッセージは</p>
+
+<p><strong>「null のオブジェクト参照のプロパティまたはメソッドにアクセスすることはできません。」</strong></p>
+
+<p>だんだん疲れてきたのでもう嫌になって、アニマックスでやってる金田一の映画を見てから検索の作業に戻ると、</p>
+
+<pre class="brush:as3">root.loaderInfo.parameters.value
+</pre>
+
+<p>で受け取れるよ！という記事に出会いました。意外ときれいにできてるけど_rootの一件もあるし、と懐疑的ではありました。ダメ元でやってみると</p>
+
+<p><strong>パラメーター value は null 以外でなければなりません。</strong></p>
+
+<p><span style="color: #ff6600;">なんか感触が違う</span>。とりあえずnullは代入できてる感じ。</p>
+
+<p>そして案の定実行環境に放り込んでみると……動いた！！！！！</p>
+
+<p>【結果】</p>
+
+<p>送信側（PHP）のコード &#8211; embedのsrcでswfファイルへのパスのところに、</p>
+
+<p>`所々の都合でActionScriptを書くことになったのですが、PHPとの連携でハマったことをまとめておきます。</p>
+
+<p>【PHP/AS3(Flash)の連携】</p>
+
+<p>今回はPHPで設定された値をAS側に受け渡すコードを書きました。まず、いろいろ調べてみたら</p>
+
+<p>PHP側で&#8221;test.swf?param=value&#8221;みたいに、GETリクエストを送信するような形でデータを渡し、ASの受信側は</p>
+
+<pre class="brush:as3">var value:String
+= mx.core.Application.application.parameters.value;
+</pre>
+
+<p>で受け取れると書いてあったのでこれでやりました。</p>
+
+<p>しかし、まず<span style="color: #ff0000;">mx.core.Application.application.parameters.valueが見当たらない！</span></p>
+
+<p>エラーメッセージは<strong>「null のオブジェクト参照のプロパティまたはメソッドにアクセスすることはできません。」</strong>です</p>
+
+<p>ちなみにFlashDevelopでFlex4.5.1,ActionScript3.0を使ってコーディングしています。</p>
+
+<p>さあ困った。それから原因を探していたらどうやらApplication.applicationは廃止されていたようです。</p>
+
+<p>その次に、</p>
+
+<pre class="brush:as3">_root.value
+</pre>
+
+<p>で受け取れるよ！というのを見つけてやってみましたがここでも<span style="color: #ff0000;">未定義の_rootにアクセスしてるよ！</span>と怒られました。（Access of undefined property _root.）</p>
+
+<p>どうやらAS2まではいけたようですが、これも３で廃止されてしまったそう。途方にくれていると、</p>
+
+<pre class="brush:as3">mx.core.FlexGlobals.topLevelApplication.parameters.value
+</pre>
+
+<p>で受け取れるよ！というのを見つけました。いい加減できるだろうと思っていたのに、コードを書いてみるとIDEさんがサジェストしてくれない。</p>
+
+<p>「またApplication.applicationの二の前か……」と殆ど諦めてはいましたがビルドだけはしてみるとなんとエラーは出ないではありませんか！出力もされてないけど！ちなみにエラーメッセージは</p>
+
+<p><strong>「null のオブジェクト参照のプロパティまたはメソッドにアクセスすることはできません。」</strong></p>
+
+<p>だんだん疲れてきたのでもう嫌になって、アニマックスでやってる金田一の映画を見てから検索の作業に戻ると、</p>
+
+<pre class="brush:as3">root.loaderInfo.parameters.value
+</pre>
+
+<p>で受け取れるよ！という記事に出会いました。意外ときれいにできてるけど_rootの一件もあるし、と懐疑的ではありました。ダメ元でやってみると</p>
+
+<p><strong>パラメーター value は null 以外でなければなりません。</strong></p>
+
+<p><span style="color: #ff6600;">なんか感触が違う</span>。とりあえずnullは代入できてる感じ。</p>
+
+<p>そして案の定実行環境に放り込んでみると……動いた！！！！！</p>
+
+<p>【結果】</p>
+
+<p>送信側（PHP）のコード &#8211; embedのsrcでswfファイルへのパスのところに、</p>
+
+<p>`</p>
+
+<p>受信側（AS3）のコード</p>
+
+<pre class="brush:as3">package {
+ import flash.display.Sprite;
+ import flash.display.LoaderInfo;
+
+ public class Main extends Sprite {
+  public function Main():void {
+
+   var str:String = root.loaderInfo.parameters.value;
+   // strにtestが代入された
+
+  }
+ }
+}</pre>
+
+        
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>blog.arc</h4>
+		<div class="row">
+			<div class="col-md-3">
+				<div class="form-group">
+					<p></p>
+					<a href="mailto:"></a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/"></a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/"></a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="http://blog.arcturu.com//js/jquery-2.1.4.min.js"></script>
+<script src="http://blog.arcturu.com//js/bootstrap.min.js"></script>
+
+  </body>
+</html>

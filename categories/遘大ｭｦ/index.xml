@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>科学 on blog.arc</title>
+    <link>http://blog.arcturu.com/categories/%E7%A7%91%E5%AD%A6/index.xml</link>
+    <description>Recent content in 科学 on blog.arc</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-JP</language>
+    <atom:link href="/categories/%E7%A7%91%E5%AD%A6/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>【高校生クイズ2011】準決勝の物理問題の解答</title>
+      <link>http://blog.arcturu.com/2011/09/10/27/</link>
+      <pubDate>Fri, 09 Sep 2011 15:03:41 +0000</pubDate>
+      
+      <guid>http://blog.arcturu.com/2011/09/10/27/</guid>
+      <description>&lt;p&gt;やばいですね高校生クイズ。毎年のことながらレベル高すぎて笑えてきました。&lt;/p&gt;
+
+&lt;p&gt;さて、準決勝？の物理の問題を解説してみようと思います。&lt;/p&gt;
+
+&lt;p&gt;&lt;span style=&#34;color: #ff0000;&#34;&gt;&lt;strong&gt;問題「宇宙の大きさはいくらか（宇宙が誕生してからの時間を137億年とする）」&lt;/strong&gt;&lt;/span&gt;&lt;/p&gt;
+
+&lt;p&gt;方針としては、おそらくこうでしょう。&lt;/p&gt;
+
+&lt;p&gt;①宇宙のモデルを考える&lt;/p&gt;
+
+&lt;p&gt;②その体積を求める&lt;/p&gt;
+
+&lt;p&gt;①について、宇宙というのは宇宙背景放射がほぼ一様にあるということから考えてみても、自分を中心とした球形であると考えられますよね。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://revolve.jp/arc/wp-content/uploads/2011/09/img2.png&#34;&gt;&lt;img class=&#34;alignnone size-full wp-image-28&#34; title=&#34;画像１&#34; src=&#34;http://revolve.jp/arc/wp-content/uploads/2011/09/img2.png&#34; alt=&#34;&#34; width=&#34;512&#34; height=&#34;512&#34; srcset=&#34;http://arc.revolve.jp/wp-content/uploads/2011/09/img2-150x150.png 150w, http://arc.revolve.jp/wp-content/uploads/2011/09/img2-300x300.png 300w, http://arc.revolve.jp/wp-content/uploads/2011/09/img2.png 512w&#34; sizes=&#34;(max-width: 512px) 100vw, 512px&#34; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;さてこれが①で出したい方針です。&lt;/p&gt;
+
+&lt;p&gt;①のまとめ：「&lt;strong&gt;&lt;span style=&#34;color: #3366ff;&#34;&gt;宇宙とは、自分を中心とする半径１３７億光年の球体である&lt;/span&gt;&lt;/strong&gt;」&lt;/p&gt;
+
+&lt;p&gt;もうここまで来たら②を考えて終了です。&lt;/p&gt;
+
+&lt;p&gt;球の体積を求めるだけなのでこうなります。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;http://revolve.jp/arc/wp-content/uploads/2011/09/img3.png&#34;&gt;&lt;img class=&#34;alignnone size-full wp-image-30&#34; title=&#34;画像２&#34; src=&#34;http://revolve.jp/arc/wp-content/uploads/2011/09/img3.png&#34; alt=&#34;&#34; width=&#34;512&#34; height=&#34;600&#34; srcset=&#34;http://arc.revolve.jp/wp-content/uploads/2011/09/img3-256x300.png 256w, http://arc.revolve.jp/wp-content/uploads/2011/09/img3.png 512w&#34; sizes=&#34;(max-width: 512px) 100vw, 512px&#34; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;１行目は宇宙の体積を求めるために球の体積の公式を定義しています。&lt;/p&gt;
+
+&lt;p&gt;２行目で&amp;#8221;億年&amp;#8221;の単位から&amp;#8221;秒&amp;#8221;の単位に宇宙誕生からの時間を直し、&lt;/p&gt;
+
+&lt;p&gt;３行目で光速をかけることによって宇宙の半径を求めています。&lt;/p&gt;
+
+&lt;p&gt;そこで求めた宇宙の半径を６行目で宇宙の体積の式に代入して（３乗の計算は省いています）&lt;/p&gt;
+
+&lt;p&gt;答えの&lt;strong&gt;&lt;span style=&#34;color: #ff0000;&#34;&gt;9.119×10^78(㎥)&lt;/span&gt;&lt;/strong&gt;が導きだされました。&lt;/p&gt;
+
+&lt;p&gt;こうして書いてみると観測者を宇宙の中心に置く発想が難しいかもしれませんが、それ以外は結構簡単に解けたので少しびっくりです。でもこれを数分のうちに手計算で解いてしまう開成とかの人たちの底力も恐ろしい……。&lt;/p&gt;
+
+&lt;p&gt;まあ、難しそうに見える高校生クイズも案外簡単に解けるよ（科学に限る）といういい布石になりましたね。&lt;/p&gt;
+
+&lt;p&gt;追記:Wikipediaとか読んでたらわからなくなってきたのでまた詳細を加えてリライトすると思います。&lt;/p&gt;
+
+&lt;p&gt;浅学なもので申し訳ないです。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

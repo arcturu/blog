@@ -1,0 +1,395 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> Mac で krita をビルドする </title>
+    
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/shortcodes.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="arcturu&#39;s posts" />
+    
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mac で krita をビルドする">
+<meta name="twitter:url" content="http://blog.arcturu.com/build-krita-on-mac/">
+<meta name="twitter:description" content="macOS Sierra (10.12.3) 上で krita (3.1.88, git d007680) をビルドしました。krita のバイナリが mac 向けに安定版として公開されたのがバージョン 3.1 からということもあり、情報が少なく、はまりどころもいくつかあったので今後のためにビルド手順をまとめておきます。
+ビルド手順 作業ディレクトリは適宜読み替えて下さい。私の場合は $HOME/Documents/repos/kritaです。
+0. 参考リンク  Building Krita 3.0 on Linux for cats - David Revoy Krita/linuxbuild - KDE Community Wiki  1. ソースのダウンロード $ git clone https://anongit.kde.org/krita.git src  2. 依存ライブラリのインストール 依存ライブラリの一覧は krita/README_PACKAGERS.md にあります。
+私の環境で追加インストールが必要だったライブラリは以下の通りです。(上 3 つのみ必須で残りは optional)
+ KDE frameworks 5 exiv2 lcms2 gsl libraw ocio poppler vc  vc 以外は homebrew パッケージがあるので homebrew でインストールし、vc はソースからビルドしました。">
+
+
+
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">arcturu&#39;s posts</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>Mac で krita をビルドする</h1>
+      <small class="post-meta">2017年3月13日 17:05</small>
+      <div class="post-content">
+        
+
+<p>macOS Sierra (10.12.3) 上で <a href="https://krita.org/">krita</a> (3.1.88, git d007680) をビルドしました。krita のバイナリが mac 向けに安定版として公開されたのがバージョン 3.1 からということもあり、情報が少なく、はまりどころもいくつかあったので今後のためにビルド手順をまとめておきます。</p>
+
+<h2 id="ビルド手順">ビルド手順</h2>
+
+<p>作業ディレクトリは適宜読み替えて下さい。私の場合は <code>$HOME/Documents/repos/krita</code>です。</p>
+
+<h3 id="0-参考リンク">0. 参考リンク</h3>
+
+<ul>
+<li><a href="http://www.davidrevoy.com/article193/guide-building-krita-on-linux-for-cats">Building Krita 3.0 on Linux for cats - David Revoy</a></li>
+<li><a href="https://community.kde.org/Krita/linuxbuild">Krita/linuxbuild - KDE Community Wiki</a></li>
+</ul>
+
+<h3 id="1-ソースのダウンロード">1. ソースのダウンロード</h3>
+
+<pre><code>$ git clone https://anongit.kde.org/krita.git src
+</code></pre>
+
+<h3 id="2-依存ライブラリのインストール">2. 依存ライブラリのインストール</h3>
+
+<p>依存ライブラリの一覧は <a href="https://github.com/KDE/krita/blob/master/README_PACKAGERS.md">krita/README_PACKAGERS.md</a> にあります。</p>
+
+<p>私の環境で追加インストールが必要だったライブラリは以下の通りです。(上 3 つのみ必須で残りは optional)</p>
+
+<ul>
+<li>KDE frameworks 5</li>
+<li>exiv2</li>
+<li>lcms2</li>
+<li>gsl</li>
+<li>libraw</li>
+<li>ocio</li>
+<li>poppler</li>
+<li>vc</li>
+</ul>
+
+<p>vc 以外は homebrew パッケージがあるので homebrew でインストールし、vc はソースからビルドしました。</p>
+
+<p>KDE framework 5 のインストール (<a href="https://github.com/haraldF/homebrew-kf5">https://github.com/haraldF/homebrew-kf5</a>)</p>
+
+<pre><code>$ brew tap haraldf/kf5
+$ cd /usr/local/Homebrew/Library/Taps/haraldf/homebrew-kf5/
+$ ./tools/install.sh
+</code></pre>
+
+<p>その他ライブラリのインストール</p>
+
+<pre><code>$ brew install exiv2 lcms2 gsl libraw ocio
+$ brew install poppler --with-qt5
+</code></pre>
+
+<p>vc のインストール</p>
+
+<pre><code>$ mkdir vc
+$ cd vc
+$ git clone https://github.com/VcDevel/Vc
+$ mkdir build
+$ cd build
+$ cmake -DCMAKE_INSTALL_PREFIX=/opt/Vc -DBUILD_TESTING=OFF ../Vc/
+$ make -j5
+$ make install
+</code></pre>
+
+<h3 id="3-環境に応じた修正">3. 環境に応じた修正</h3>
+
+<p>この状態で krita をビルドすると、私の環境では Qt と OpenEXR 周りのエラーが発生したので <code>src/CMakeLists.txt</code> の末尾付近 (最後の <code>include_directories</code> の出現の直後; 632 行目) に</p>
+
+<pre><code>include_directories(BEFORE /usr/local/opt/qt5/include)
+include_directories(BEFORE /usr/local/include/OpenEXR)
+</code></pre>
+
+<p>を追加しました。</p>
+
+<p>一行目は Qt5 と Qt4 が両方ともインストールされている場合に誤って Qt4 のヘッダが読み込まれないようにするためで、二行目は <code>OpenEXR/half.h</code> が <code>half.h</code> としてインクルードされている部分があり手元の環境ではパスが通っていなかったためです。</p>
+
+<h3 id="4-ビルド">4. ビルド</h3>
+
+<pre><code>$ PATH=&quot;/usr/local/opt/gettext/bin:$PATH&quot; cmake -DCMAKE_INSTALL_PREFIX=$HOME/Documents/repos/krita/inst $HOME/Documents/repos/krita/src -DWITH_GMIC=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPRODUCTSET=ALL -DPACKAGERS_BUILD=ON -DBUILD_TESTING=OFF -DKDE4_BUILD_TESTS=OFF -DCMAKE_PREFIX_PATH=&quot;/usr/local/Cellar/qt5/5.8.0_1/lib/cmake;/opt/Vc/lib/cmake&quot;
+$ make -j5
+$ make -j5 install
+</code></pre>
+
+<p>ポイント</p>
+
+<ul>
+<li>macOS では BSD 版 gettext が提供されており、GNU 版 gettext は brew でインストールしてもパスは通されないため明示的に指定</li>
+<li><code>-DCMAKE_INSTALL_PREFIX</code> でインストール先ディレクトリを指定 (ということになっているが <code>krita.app</code> は <code>/Application/KDE/</code> 以下に配置される (なぜ ?))</li>
+<li><code>-DCMAKE_PREFIX_PATH</code> で qt5 と vc のパスを指定 (まずこのオプションはなしで cmake してみて、パスが通っていなかったら付け加えればいい)</li>
+</ul>
+
+<h3 id="5-実行">5. 実行</h3>
+
+<p>ビルドできても実行までにやや手間がかかります。</p>
+
+<p><code>make install</code> 終了時には <code>/Application/KDE/krita.app/</code> 以下は次のようなファイル構成になっていると思います (私はそうでした)。</p>
+
+<pre><code>$ tree
+.
+└── krita.app
+    └── Contents
+        ├── Info.plist
+        ├── MacOS
+        │   └── krita
+        └── Resources
+            └── krita_SRCS.icns
+</code></pre>
+
+<p>作業ディレクトリ <code>$HOME/Documents/repos/krita/</code> 以下は次のようになりました。</p>
+
+<pre><code>$ tree -L 2
+.
+├── build
+│   ├── CMakeCache.txt
+│   ... (略)
+│   └── plugins
+├── inst
+│   ├── etc
+│   ├── lib
+│   └── share
+└── src
+    ├── 3rdparty
+    ... (略)
+    └── winquirks
+</code></pre>
+
+<p>krita バイナリ配布版のディレクトリ構成を参考にリンクを張ります。</p>
+
+<pre><code>$ ln -s $HOME/Documents/repos/krita/inst/lib /Applications/KDE/krita.app/Contents/Frameworks
+$ ln -s $HOME/Documents/repos/krita/inst/lib/kritaplugins /Applications/KDE/krita.app/Contents/PlugIns
+$ ln -s $HOME/Documents/repos/krita/inst/share/* /Applications/KDE/krita.app/Contents/Resources
+$ ln -s $HOME/Documents/repos/krita/inst/share /Applications/KDE/krita.app/Contents
+</code></pre>
+
+<p>(煩雑ですがミニマルなつもりです)</p>
+
+<p><code>/Applications/KDE/krita.app/</code> 以下は次のようになりました。</p>
+
+<pre><code>$ tree -L 4
+.
+└── krita.app
+    └── Contents
+        ├── Frameworks -&gt; /Users/arcturu/Documents/repos/krita/inst/lib
+        ├── Info.plist
+        ├── MacOS
+        │   └── krita
+        ├── PlugIns -&gt; /Users/arcturu/Documents/repos/krita/inst/lib/kritaplugins
+        ├── Resources
+        │   ├── applications -&gt; /Users/arcturu/Documents/repos/krita/inst/share/applications
+        │   ├── color -&gt; /Users/arcturu/Documents/repos/krita/inst/share/color
+        │   ├── color-schemes -&gt; /Users/arcturu/Documents/repos/krita/inst/share/color-schemes
+        │   ├── icons -&gt; /Users/arcturu/Documents/repos/krita/inst/share/icons
+        │   ├── krita -&gt; /Users/arcturu/Documents/repos/krita/inst/share/krita
+        │   ├── krita_SRCS.icns
+        │   ├── kritaplugins -&gt; /Users/arcturu/Documents/repos/krita/inst/share/kritaplugins
+        │   └── metainfo -&gt; /Users/arcturu/Documents/repos/krita/inst/share/metainfo
+        └── share -&gt; /Users/arcturu/Documents/repos/krita/inst/share
+</code></pre>
+
+<p>これでアイコンをクリックするか、<code>$ /Applications/KDE/krita.app/Contents/MacOS/krita</code> で起動します。</p>
+
+<h2 id="openmp-について">OpenMP について</h2>
+
+<p>Xcode についている clang (Apple LLVM version 8.0.0 (clang-800.0.42.1)) は現状 OpenMP に対応していません。OpenMP に対応させるには clang 3.7.0 以上か gcc 4.2 以上を使えばよいらしい (<a href="http://qiita.com/r9y9/items/2e382887ee7e9fa0fb9f">Macでclang+OpenMP 2016</a>) ので gcc 6.2.0 で試しましたが、ビルドできませんでした。以下エラー抜粋です。</p>
+
+<pre><code>[  2%] Building CXX object libs/widgetutils/CMakeFiles/kritawidgetutils.dir/KoResourcePaths.cpp.o
+In file included from /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/Availability.h:184:0,
+                 from /usr/local/opt/qt5/include/QtCore/qsystemdetection.h:236,
+                 from /usr/local/opt/qt5/include/QtCore/qglobal.h:95,
+                 from /usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qscopedpointer.h:43,
+                 from /usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/QScopedPointer:1,
+                 from /Users/arcturu/Documents/repos/krita/src/libs/widgetutils/KoResourcePaths.h:21,
+                 from /Users/arcturu/Documents/repos/krita/src/libs/widgetutils/KoResourcePaths.cpp:18:
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:53:34: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithYear API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 0),
+                                  ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:53:34: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithYear API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 0),
+                                  ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:53:34: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithYear API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 0),
+                                  ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:53:34: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithYear API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 0),
+                                  ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:54:35: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithMonth API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 1),
+                                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:54:35: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithMonth API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 1),
+                                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:54:35: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithMonth API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 1),
+                                   ^
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/CoreFoundation.framework/Headers/CFDateFormatter.h:54:35: error: 'introduced' was not declared in this scope
+     kCFISO8601DateFormatWithMonth API_AVAILABLE(macosx(10.12), ios(10.0), watchos(3.0), tvos(10.0)) = (1UL &lt;&lt; 1),
+</code></pre>
+
+<p>これは <a href="https://github.com/LLNL/spack/issues/new">cmake fails to build on macOS Sierra with GCC@6.2.0 · Issue #1847 · LLNL/spack</a> と全く同じ問題だと思われます。clang では C と Objective-C のごった煮もビルドできるが gcc では問題があるらしい。gcc もランタイムを用意すれば Objectove-C コードをビルドできる (<a href="http://qiita.com/ryochin/items/77100d42da4f8cfc8b8f">CentOS6 に Objective-C 環境を整える - Qiita</a>) そうなのでなんとかなりそうな気もしますが、新しい clang を使ったほうが簡単そうです。</p>
+
+<p>また、gcc では以下のような警告も出ます。(参考: <a href="http://stackoverflow.com/questions/39865367/warning-section-textcoal-nt-is-deprecate-since-updating-to-mac-osx-sierra">warning: section &ldquo;__textcoal_n&rdquo; is deprecate since updating to Mac OSX Sierra [duplicate]</a>)</p>
+
+<pre><code>[  1%] Building CXX object libs/version/CMakeFiles/kritaversion.dir/KritaVersionWrapper.cpp.o
+/var/folders/ky/fzyv5cp90c16t7kxbq9c_hf80000gn/T//ccsMpiqj.s:3:11: warning: section &quot;__textcoal_nt&quot; is deprecated
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+                 ^      ~~~~~~~~~~~~~
+/var/folders/ky/fzyv5cp90c16t7kxbq9c_hf80000gn/T//ccsMpiqj.s:3:11: note: change section name to &quot;__text&quot;
+        .section __TEXT,__textcoal_nt,coalesced,pure_instructions
+</code></pre>
+
+<h2 id="落とし穴">落とし穴</h2>
+
+<p>ビルド手順 3 の <code>include_directories(BEFORE /usr/local/opt/qt5/include)</code> を追加していない状態でビルドすると以下のようなエラーが出ました。原因は Qt4 のヘッダファイルが誤って読み込まれてしまい、Qt5 で新しく定義されたマクロが展開できなかったことだと考えられます。</p>
+
+<pre><code>[  0%] Building CXX object libs/version/CMakeFiles/kritaversion.dir/KritaVersionWrapper.cpp.o
+In file included from /usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/QString:1:0,
+                 from /Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.h:22,
+                 from /Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.cpp:18:
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qstring.h:576:24: error: missing binary operator before token &quot;(&quot;
+ #if QT_DEPRECATED_SINCE(5, 0)
+                        ^
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qstring.h:1052:24: error: missing binary operator before token &quot;(&quot;
+ #if QT_DEPRECATED_SINCE(5, 3)
+                        ^
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qstring.h:1081:24: error: missing binary operator before token &quot;(&quot;
+ #if QT_DEPRECATED_SINCE(5, 0)
+                        ^
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qstring.h:1481:24: error: missing binary operator before token &quot;(&quot;
+ #if QT_DEPRECATED_SINCE(5, 0)
+                        ^
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qstring.h:1756:24: error: missing binary operator before token &quot;(&quot;
+ #if QT_DEPRECATED_SINCE(5, 0)
+                        ^
+In file included from /usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qstring.h:50:0,
+                 from /usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/QString:1,
+                 from /Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.h:22,
+                 from /Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.cpp:18:
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qrefcount.h:54:21: error: expected ';' at end of member declaration
+     inline bool ref() Q_DECL_NOTHROW {
+                     ^
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qrefcount.h:54:23: error: 'Q_DECL_NOTHROW' does not name a type
+     inline bool ref() Q_DECL_NOTHROW {
+                       ^~~~~~~~~~~~~~
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qrefcount.h:65:23: error: expected ';' at end of member declaration
+     inline bool deref() Q_DECL_NOTHROW {
+                       ^
+/usr/local/Cellar/qt5/5.8.0_1/lib/QtCore.framework/Headers/qrefcount.h:65:25: error: 'Q_DECL_NOTHROW' does not name a type
+     inline bool deref() Q_DECL_NOTHROW {
+                         ^~~~~~~~~~~~~~
+                              ^
+(中略)
+
+
+/Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.cpp:30:30: error: 'const struct QStaticStringData&lt;7&gt;' has no member named 'data_ptr'; did you mean 'data'?
+         QString gitVersion = QStringLiteral(KRITA_GIT_SHA1_STRING);
+                              ^
+/Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.cpp: In lambda function:
+/Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.cpp:31:19: error: 'QStringData' was not declared in this scope
+         version = QStringLiteral(&quot;%1 (git %2)&quot;).arg(kritaVersion, gitVersion);
+                   ^
+/Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.cpp:31:19: error: braces around scalar initializer for type 'qunicodechar {aka char16_t}'
+         version = QStringLiteral(&quot;%1 (git %2)&quot;).arg(kritaVersion, gitVersion);
+                   ^
+/Users/arcturu/Documents/repos/krita/src/libs/version/KritaVersionWrapper.cpp:31:19: error: 'const struct QStaticStringData&lt;11&gt;' has no member named 'data_ptr'; did you mean 'data'?
+         version = QStringLiteral(&quot;%1 (git %2)&quot;).arg(kritaVersion, gitVersion);
+                   ^
+At global scope:
+cc1plus: warning: unrecognized command line option '-Wno-deprecated-register'
+cc1plus: warning: unrecognized command line option '-Wno-macro-redefined'
+make[2]: *** [libs/version/CMakeFiles/kritaversion.dir/KritaVersionWrapper.cpp.o] Error 1
+make[1]: *** [libs/version/CMakeFiles/kritaversion.dir/all] Error 2
+make: *** [all] Error 2
+</code></pre>
+
+<p><code>OpenEXR/half.h</code> へのパスが通っていないときは以下のようなエラーが出ます。</p>
+
+<pre><code>Scanning dependencies of target kritapigment
+[  5%] Building CXX object libs/pigment/CMakeFiles/kritapigment.dir/DebugPigment.cpp.o
+[  5%] Building CXX object libs/pigment/CMakeFiles/kritapigment.dir/KoBasicHistogramProducers.cpp.o
+/Users/arcturu/Documents/repos/krita/src/libs/pigment/KoBasicHistogramProducers.cpp:26:10: fatal error:
+      'half.h' file not found
+#include &lt;half.h&gt;
+</code></pre>
+
+<p><code>/Applications/KDE/krita.app/</code> 以下のディレクトリ構成は重要で、例えば <code>/Applications/KDE/krita.app/PlugIns/</code> がないと <code>The Calligra LittleCMS color management plugin is not installed. Krita will quit now.</code> というポップアップが出て強制終了します。</p>
+
+<a href="/images/2017-03-13/lcms-error.png" class="ic">
+  <img src="/images/2017-03-13/lcms-error.png" alt="The Calligra LittleCMS color management plugin is not installed. Krita will quit now." />
+</a>
+
+
+        <div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "arcturu" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>arcturu&#39;s posts</h4>
+		<div class="row">
+
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/arcturu">arcturu</a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/_arcturu">_arcturu</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+
+
+  </body>
+</html>

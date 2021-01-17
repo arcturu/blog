@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>プログラミング / 開発 on arcturu&#39;s posts</title>
+    <link>http://blog.arcturu.com/categories/%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%9F%E3%83%B3%E3%82%B0-/-%E9%96%8B%E7%99%BA/index.xml</link>
+    <description>Recent content in プログラミング / 開発 on arcturu&#39;s posts</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-JP</language>
+    <atom:link href="/categories/%E3%83%97%E3%83%AD%E3%82%B0%E3%83%A9%E3%83%9F%E3%83%B3%E3%82%B0-/-%E9%96%8B%E7%99%BA/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>twoproc（的な何か）でインオーダパイプラインコアを書く</title>
+      <link>http://blog.arcturu.com/2015/12/17/276/</link>
+      <pubDate>Wed, 16 Dec 2015 16:25:42 +0000</pubDate>
+      
+      <guid>http://blog.arcturu.com/2015/12/17/276/</guid>
+      <description>
+
+&lt;p&gt;これは&lt;a href=&#34;http://www.adventar.org/calendars/1056&#34;&gt;CPU実験 Advent Calendar 2015&lt;/a&gt;の17日目の記事です。&lt;/p&gt;
+
+&lt;p&gt;CPU 実験の 1st アーキテクチャとして実装したインオーダパイプラインコアについて&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;構成&lt;/li&gt;
+&lt;li&gt;ハマったポイント&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;を中心にまとめました。&lt;/p&gt;
+
+&lt;p&gt;完全なソースコードは &lt;a href=&#34;https://github.com/arcturu/CarteletV1&#34;&gt;https://github.com/arcturu/CarteletV1&lt;/a&gt; にあります。&lt;/p&gt;
+
+&lt;h2 id=&#34;twoprocとは&#34;&gt;twoprocとは&lt;/h2&gt;
+
+&lt;p&gt;twoproc とは VHDL のデザイン手法のひとつで、適当に書くとしっちゃかめっちゃかになりがちな VHDL コードの構造化と、バグの予防に非常に役立ちます。&lt;/p&gt;
+
+&lt;p&gt;詳細については &lt;a href=&#34;http://wasabiz.hatenablog.com/entry/2015/03/18/173921&#34;&gt;twoprocの書き方&lt;/a&gt; と、リンク先ブログ内にあるスライドが非常にわかりやすいのでそちらを参照して下さい。&lt;/p&gt;
+
+&lt;p&gt;僕が感じた twoproc を採用する直接的なメリットとしては&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;意図しないラッチが発生しにくい&lt;/li&gt;
+&lt;li&gt;ラッチを消しやすい&lt;/li&gt;
+&lt;li&gt;構造化されてわかりやすい (twoproc のメリットというよりも record 文のメリット)&lt;/li&gt;
+&lt;li&gt;データの流れが理解しやすい&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;などがあります。&lt;/p&gt;
+
+&lt;h2 id=&#34;パイプライン構成&#34;&gt;パイプライン構成&lt;/h2&gt;
+
+&lt;p&gt;&lt;a rel=&#34;nofollow&#34; href=&#34;http://www.amazon.co.jp/gp/product/B00UJ42A0K/ref=as_li_ss_tl?ie=UTF8&amp;#038;camp=247&amp;#038;creative=7399&amp;#038;creativeASIN=B00UJ42A0K&amp;#038;linkCode=as2&amp;#038;tag=arcturu-22&#34;&gt;パタヘネ&lt;/a&gt;&lt;img src=&#34;http://ir-jp.amazon-adsystem.com/e/ir?t=arcturu-22&amp;#038;l=as2&amp;#038;o=9&amp;#038;a=B00UJ42A0K&#34; width=&#34;1&#34; height=&#34;1&#34; border=&#34;0&#34; alt=&#34;&#34; style=&#34;border:none !important; margin:0px !important;&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;を参考に以下の四段構成にしました。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;命令フェッチ (Instruction Fetch: IF)&lt;/li&gt;
+&lt;li&gt;デコード・レジスタアクセス (Instruction Decode / Register Read: ID)&lt;/li&gt;
+&lt;li&gt;実行 (Execute: EX)&lt;/li&gt;
+&lt;li&gt;レジスタ書き戻し (Write Back: WB)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;パタヘネでは五段目としてメモリアクセスフェーズがありますが、Cartelet v1 (1st アーキテクチャ) ではメモリリード命令も実行フェーズ内で完結させるようにしました。このようにした理由は、キャッシュメモリをつけるとヒット時とミス時でアクセスに必要なクロック数が変わり、それを違うパイプライン段で受けるのがしんどかったためです。&lt;/p&gt;
+
+&lt;p&gt;Cartelet v1 ではリードに 0 クロックしかかからないフリップフロップのキャッシュを 16 個つけていますが、実行フェーズでの挙動は&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;キャッシュミス時 =&amp;gt; 3 clk バブルが入る (4 clk で実行終了)&lt;/li&gt;
+&lt;li&gt;キャッシュヒット時 =&amp;gt; バブルは入らない (1 clk で実行終了)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;となります。&lt;/p&gt;
+
+&lt;h3 id=&#34;パイプライン化の方法&#34;&gt;パイプライン化の方法&lt;/h3&gt;
+
+&lt;p&gt;パイプラインという概念は本や講義では当たり前のように出てきて、「それ名前つけるほどのものでもなくね？」という感じがしつつも、実際に VHDL でどう書くのかと言われると少し詰まってしまうのではないでしょうか。僕はそうでした。&lt;/p&gt;
+
+&lt;a href=&#34;http://blog.arcturu.com/images/2015-12-17/pipeline.png&#34; class=&#34;ic&#34;&gt;
+  &lt;img src=&#34;http://blog.arcturu.com/images/2015-12-17/pipeline.png&#34; alt=&#34;pipeline&#34; /&gt;
+&lt;/a&gt;
+
+
+&lt;p&gt;こんな感じのパイプラインの概念図はよく目にしますが、以下の Cartelet v1 の cpu.vhd の抜粋と見比べるとほぼそのまま対応する部分があることがわかると思います。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/arcturu/CarteletV1/blob/master/cpu.vhd&#34;&gt;https://github.com/arcturu/CarteletV1/blob/master/cpu.vhd&lt;/a&gt;&lt;/p&gt;
+
+&lt;pre class=&#34;lang:default decode:true &#34; title=&#34;cpu.vhd&#34; &gt;library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+use work.types.all;
+
+entity CPU is
+    port (
+        clk : in std_logic;
+        rst : in std_logic;
+        cpu_in : in cpu_in_type;
+        cpu_out : out cpu_out_type);
+end entity;
+
+architecture struct of CPU is
+    type fetch_readreg_reg_type is record
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        fetched : std_logic;
+        data : std_logic_vector (31 downto 0);
+    end record;
+    type readreg_ex_reg_type is record
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        data : std_logic_vector (31 downto 0);
+        ex_op : std_logic_vector (5 downto 0);
+        dest_num : std_logic_vector (4 downto 0);
+        dest_value : std_logic_vector (31 downto 0);
+        lhs_num : std_logic_vector (4 downto 0);
+        lhs_value : std_logic_vector (31 downto 0);
+        rhs_num : std_logic_vector (4 downto 0);
+        rhs_value : std_logic_vector (31 downto 0);
+        imm : std_logic_vector (15 downto 0);
+    end record;
+    type ex_wb_reg_type is record
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        dest_num : std_logic_vector (4 downto 0);
+        data_source : data_source_type;
+        sram_state : sram_state_type;
+        sram_addr : std_logic_vector (19 downto 0);
+        sram_data_to_be_written : std_logic_vector (31 downto 0);
+        write : std_logic;
+        data : std_logic_vector (31 downto 0);
+        next_pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+    end record;
+    type wb_mem_reg_type is record
+        sram_state : sram_state_type;
+        sram_data_to_be_written : std_logic_vector (31 downto 0);
+        dest_num : std_logic_vector (4 downto 0);
+    end record;
+    -- (cache などの type 宣言)
+    type reg_type is record
+        sram_cache : sram_cache_type;
+        sram_in_buf : std_logic_vector (31 downto 0);
+        pc : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        bubble_counter : std_logic_vector (3 downto 0);
+        repeat : std_logic;
+        load_size : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        load_counter : std_logic_vector ((PMEM_ADDR_WIDTH - 1) downto 0);
+        forwarder_file : forwarder_file_type;
+        fetch_counter : std_logic_vector (3 downto 0);
+        fetch_readreg_reg2 : fetch_readreg_reg_type;
+        readreg_ex_reg : readreg_ex_reg_type;
+        ex_wb_reg : ex_wb_reg_type;
+        wb_mem_reg : wb_mem_reg_type;
+        regs : registers_type;
+        fregs : registers_type;
+        fpcond : std_logic;
+        alu_in : alu_in_type;
+        fpu_in : fpu_in_type;
+        cpu_state : cpu_state_type;
+    end record;
+    constant reg_init : reg_type := (
+        sram_cache =&amp;gt; (others =&amp;gt; (
+            data =&amp;gt; (others =&amp;gt; &#39;0&#39;),
+            valid =&amp;gt; &#39;0&#39;,
+            tag =&amp;gt; (others =&amp;gt; &#39;0&#39;))),
+        -- (略)
+        cpu_state =&amp;gt; ready);
+begin
+--    pmem : dmem_sim port map (
+    pmem : mem port map (
+        clka =&amp;gt; clk,
+        wea =&amp;gt; pmem_we,
+        addra =&amp;gt; pmem_addr,
+        dina =&amp;gt; pmem_din,
+        douta =&amp;gt; pmem_dout);
+
+    alu_0 : alu port map (
+        clk =&amp;gt; clk,
+        rst =&amp;gt; &#39;0&#39;,
+        alu_in =&amp;gt; alu_in,
+        alu_out =&amp;gt; alu_out);
+
+    fpu_0 : fpu port map (
+        clk =&amp;gt; clk,
+        rst =&amp;gt; &#39;0&#39;,
+        fpu_in =&amp;gt; fpu_in,
+        fpu_out =&amp;gt; fpu_out);
+
+
+    comb : process (cpu_in, r, pmem_dout, alu_out, fpu_out)
+        variable v : reg_type;
+        -- (略: reg_type に入れる程でもない(次のクロックまで記憶する必要が無い) variables)
+    begin
+        v := r;
+        cpu_ex_rst8 := &#39;0&#39;;
+        cpu_ex_go := &#39;0&#39;;
+        -- (略: variable の初期化)
+        inst := (others =&amp;gt; &#39;0&#39;);
+        case r.cpu_state is
+-- この辺はプログラムローダ ----------------------------------------------------------------------
+            when ready =&amp;gt;
+                -- (略: プログラムローダと実行モードの切り替えをしている)
+            when ploading =&amp;gt;
+                -- (略: プログラムメモリにプログラムを書き込む)
+            when dloading =&amp;gt;
+                -- (略: データメモリ(SRAM) に .data 領域のデータを書き込む)
+            when running =&amp;gt;
+                pmem_we &amp;lt;= (others =&amp;gt; &#39;0&#39;);
+
+                v_forwarder := r.forwarder_file(0);
+-- write back -----------------------------------------------------------------------------
+                if r.repeat = &#39;0&#39; then
+                    v.forwarder_file(1) := r.forwarder_file(0);
+                    if r.ex_wb_reg.write = &#39;1&#39; then
+                        case r.ex_wb_reg.data_source is
+                            when src_alu =&amp;gt;
+                                tmp_data := alu_out.data;
+                                v.regs (to_integer(unsigned(r.ex_wb_reg.dest_num))) := tmp_data;
+                                v.forwarder_file(0).floating := &#39;0&#39;;
+                                v_forwarder.floating := &#39;0&#39;;
+                           -- (略: alu 以外の演算器からの出力データを処理
+                        end case;
+                        v.forwarder_file(0).reg_num := r.ex_wb_reg.dest_num;
+                        v_forwarder.reg_num := r.ex_wb_reg.dest_num;
+                        v.forwarder_file(0).valid := &#39;1&#39;;
+                        v_forwarder.valid := &#39;1&#39;;
+                        v.forwarder_file(0).value := tmp_data;
+                        v_forwarder.value := tmp_data;
+                    elsif v.repeat = &#39;0&#39; then
+                        v.forwarder_file(0).valid := &#39;0&#39;;
+                        v_forwarder.valid := &#39;0&#39;;
+                    end if;
+                end if;
+
+-- execute -------------------------------------------------------------------------------------
+                --      forwarding
+                ex_lhs_value := r.readreg_ex_reg.lhs_value;
+                ex_rhs_value := r.readreg_ex_reg.rhs_value;
+                ex_dest_value := r.readreg_ex_reg.dest_value;
+
+                -- (略: フォワーディングされてきたデータを ex_lhs_value などに入れる)
+
+                flush_read := &#39;0&#39;;
+                if r.bubble_counter = x&#34;0&#34; then
+                    v.ex_wb_reg.pc := r.readreg_ex_reg.pc;
+                    v.ex_wb_reg.write := &#39;0&#39;;
+                    v.ex_wb_reg.sram_state := idle;
+                end if;
+                case r.readreg_ex_reg.ex_op is
+                    when OP_ADD =&amp;gt;
+                        v.ex_wb_reg.dest_num := r.readreg_ex_reg.dest_num;
+                        v.ex_wb_reg.write := &#39;1&#39;;
+                        v.ex_wb_reg.data_source := src_alu;
+                        v.alu_in.command := ALU_ADD;
+                        v.alu_in.lhs := ex_lhs_value;
+                        v.alu_in.rhs := ex_rhs_value;
+                    when OP_ADDI =&amp;gt;
+                    -- (略: 個々の命令の処理)
+                    when others =&amp;gt;
+                end case;
+                if v.bubble_counter = x&#34;0&#34; and flush_read = &#39;0&#39; and v.repeat = &#39;0&#39; and no_fetch = &#39;0&#39; then
+                    v.pc := std_logic_vector(unsigned(v.pc) + 1); -- pc すすめる
+                end if;
+
+-- read and decode -----------------------------------------------------------------------------
+                -- (略: デコードして v.readreg_ex_reg を更新)
+
+-- fetch ---------------------------------------------------------------------------------------
+                v_pmem_addr := v.pc;
+                if v.bubble_counter = x&#34;0&#34; and flush_read = &#39;0&#39; and v.repeat = &#39;0&#39; and no_fetch = &#39;0&#39; then -- v なのは意図的です
+--                    v.fetch_readreg_reg2.pc := r.fetch_readreg_reg.pc;
+                    v.fetch_readreg_reg2.pc := v.pc;
+                    v.fetch_readreg_reg2.fetched := &#39;0&#39;;
+                end if;
+
+                v.sram_in_buf := cpu_in.sram_din;
+            when others =&amp;gt;
+                pmem_we &amp;lt;= (others =&amp;gt; &#39;0&#39;);
+        end case;
+
+-- 計算結果を出力 -------------------------------------------------------------------------------
+        cpu_out.ex_pop8 &amp;lt;= cpu_ex_pop8;
+        cpu_out.sram_we &amp;lt;= cpu_ex_sram_we;
+        cpu_out.sram_addr &amp;lt;= cpu_ex_sram_addr;
+        cpu_out.sram_dout &amp;lt;= cpu_ex_sram_dout;
+        cpu_out.ex_rst8 &amp;lt;= cpu_ex_rst8;
+        cpu_out.state &amp;lt;= r.cpu_state;
+        cpu_out.ex_go &amp;lt;= cpu_ex_go;
+        cpu_out.ex_data &amp;lt;= cpu_ex_data;
+        pmem_addr &amp;lt;= v_pmem_addr;
+        pmem_din &amp;lt;= v_pmem_din;
+        fpu_in &amp;lt;= v.fpu_in;
+        alu_in &amp;lt;= v.alu_in;
+        v.regs (0) := (others =&amp;gt; &#39;0&#39;); -- must be zero
+        rin &amp;lt;= v;
+    end process;
+    reg : process (clk)
+    begin
+        if rising_edge(clk) then
+            r &amp;lt;= rin;
+        end if;
+    end process;
+end struct;&lt;/pre&gt;
+
+&lt;p&gt;ここで、データが流れる順序としては IF, ID, EX, WB なのにコード中では WB, EX, ID, IF の順に書いてあるのはこうすることでフォワーディングが自然に書ける（WB に来た計算済みデータを variable として EX に流し、EX のオペランドの値としてつかえるようにすればフォワーディングできる）ためです。ただあんまりステージ間を跨いだ variable をつかいまくるとそれがクリティカルパスになり、何のためにパイプライン化しているのかわからなくなってくるので、ステージを跨いだ variable は可能な限り減らさないと周波数が上がりません。Cartelet v1 ではフォワーディング周りがクリティカルパスになっています。&lt;/p&gt;
+
+&lt;p&gt;また、CPU モジュールから ALU, FPU などは切り出していますが、ここへの入力には v.alu_in や v.fpu_in という variable をつないでいます。v.alu_in などは EX フェーズで変更され、そのクロックのうちに ALU に入れたいからです。これを v.alu_in でなく r.alu_in とすると、EX フェーズで v.alu_in を変更した次のクロックで ALU にデータが入る事になり、1クロック遅れます。そもそも reg_type の中に alu_in などを入れずに、ALU の入力に直に EX フェーズで入れてしまえばいいような気がしますが、それをすると ALU を使わない命令 (fadd など) 時にも ALU の入力をいれる事を忘れがちです。これを忘れると ALU の入力にはラッチが生える（クロックの立ち上がり時にデータを拾い、次のクロックの立ち上がり時まで記憶するフリップフロップ動作ではなく、クロックの立ち上がり後も、Hi の間はデータの変化を拾い続けるラッチ動作になる）ことで xst (合成ツール) のタイミング制約判定が甘くなり？本来あるべきクリティカルパスが見えなくなる事があります（このあたりの原理はよく理解していませんが問題が起きることは確かです）。ALU の場合はとくに問題になりませんが、パスが伸びがちな FPU との接続部分にラッチが生えるとクリティカルなバグになることがあります。僕は FPU をつなぐときにラッチができていたのが原因で、マンデルブロ集合を描くサンプルプログラムを実行した時に、実行するたびに結果が変わった（しかも破壊されている）ことがあります。&lt;/p&gt;
+
+&lt;p&gt;〜破壊された mandelbrot の例〜&lt;/p&gt;
+
+&lt;a href=&#34;http://blog.arcturu.com/images/2015-12-17/mandelbrot.png&#34; class=&#34;ic&#34;&gt;
+  &lt;img src=&#34;http://blog.arcturu.com/images/2015-12-17/mandelbrot.png&#34; alt=&#34;broken mandelbrot&#34; /&gt;
+&lt;/a&gt;
+
+
+&lt;p&gt;ラッチへの対処法としては、signal への代入が全場合分けで尽くされているかどうかをチェックすることと、ラッチができると xst が&lt;/p&gt;
+
+&lt;p&gt;&amp;#8220;WARNING:Xst:737 &amp;#8211; Found n-bit latch for signal &lt;name&gt;.&amp;#8221;&lt;/p&gt;
+
+&lt;p&gt;のような warning を出すのでこれを見落とさずにしっかり直すことに尽きます。コードが長くなってくると数百個の warning が出ることがザラにあるので warning への感度がさがりますが、ラッチだけは絶対に消すように心がけています。&lt;/p&gt;
+
+&lt;h2 id=&#34;まとめ&#34;&gt;まとめ&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;インオーダパイプラインでキャッシュ付きのメモリをうまいことするのは難しい&lt;/li&gt;
+&lt;li&gt;データパスと逆向きに記述するとうまくいく&lt;/li&gt;
+&lt;li&gt;ラッチは消す&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Cartelet v1 のスペックは 39億命令 88MHz 102.7s (IPC 0.43) です。&lt;/p&gt;
+
+&lt;p&gt;今は OoO superscalar な 2nd アーキテクチャ Cartelet 2 を書いています。メモリ周りと分岐を上手いことしたいと思います。&lt;/p&gt;
+
+&lt;h3 id=&#34;おまけ&#34;&gt;おまけ&lt;/h3&gt;
+
+&lt;p&gt;（左）フォワーディングのバグによって壊れたレイトレ画像&lt;/p&gt;
+
+&lt;p&gt;（右）正しい画像&lt;/p&gt;
+
+&lt;div class=&#34;clearfix&#34;&gt;
+  &lt;a href=&#34;http://blog.arcturu.com/images/2015-12-17/min-rt6.png&#34;&gt;&lt;img src=&#34;http://blog.arcturu.com/images/2015-12-17/min-rt6.png&#34; width=&#34;300px&#34; alt=&#34;min-rt6&#34; /&gt;&lt;/a&gt;
+  &lt;a href=&#34;http://blog.arcturu.com/images/2015-12-17/min-rt.png&#34;&gt;&lt;img src=&#34;http://blog.arcturu.com/images/2015-12-17/min-rt.png&#34; width=&#34;300px&#34; alt=&#34;min-rt&#34; /&gt;&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;p&gt;一見まともそうですが、ゴミがついていたりグラデーションが変だったりします。&lt;/p&gt;
+
+&lt;p&gt;原因を調べた所、出力ユニットのキューがあふれた場合に実行がストールするとフォワーディングが壊れて RAW ハザードが起きていたようでした。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

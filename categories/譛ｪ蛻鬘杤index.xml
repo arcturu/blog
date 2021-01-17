@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>未分類 on arcturu&#39;s posts</title>
+    <link>http://blog.arcturu.com/categories/%E6%9C%AA%E5%88%86%E9%A1%9E/</link>
+    <description>Recent content in 未分類 on arcturu&#39;s posts</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>ja-JP</language>
+    <lastBuildDate>Fri, 06 Feb 2015 08:04:37 +0000</lastBuildDate>
+    
+	<atom:link href="http://blog.arcturu.com/categories/%E6%9C%AA%E5%88%86%E9%A1%9E/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Node.js で類似文字列検索 twitter bot をつくる</title>
+      <link>http://blog.arcturu.com/2015/02/06/256/</link>
+      <pubDate>Fri, 06 Feb 2015 08:04:37 +0000</pubDate>
+      
+      <guid>http://blog.arcturu.com/2015/02/06/256/</guid>
+      <description>「きんいろモザイク中に登場する台詞と類似したツイートを検知して、類似部分の台詞とメタデータをリプライするボット」を作りました。@kinmoza_quotes
+アルゴリズムと twitter streaming api / REST api の使い方を簡単にまとめておきます。
+類似文字列検索アルゴリズム 類似文字列検索のライブラリとしては SimString などいろいろあるようですが、今回のケースでは辞書サイズはどんなに大きくても10000レコードくらいで収まりそうであることと、簡単な方法でも十分速そうなことから勉強も兼ねて自分で書くことにしました。
+文字列同士の類似度の評価には「それぞれの文字列の bi-gram をとって集合としての類似度を計算し、それを文字列の類似度とする」方針を取りました。
+str1 = &#39;hogefuga&#39;; -- bi-gramize -- {ho, og, ge, ef, fu, ug, ga} str2 = &#39;abcdef&#39;; -- bi-gramize -- {ab, bc, cd, de, ef} {ho, og, ge, ef, fu, ug, ga} AND {ab, bc, cd, de, ef} = {ef} {ho, og, ge, ef, fu, ug, ga} OR {ab, bc, cd, de, ef} = {ho, og, ge, ef, fu, ug, ga, ab, bc, cd, de}  ここで</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,82 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> iOS上のHTML5 canvasでdrawImageされない時の確認事項 </title>
+    
+	<link rel="stylesheet" href="http://blog.arcturu.com//css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/font-awesome.min.css">
+    <link rel="stylesheet" href="http://blog.arcturu.com//css/theme.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="blog.arc" />
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="http://blog.arcturu.com/">blog.arc</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>iOS上のHTML5 canvasでdrawImageされない時の確認事項</h1>
+      <small class="post-meta">Feb 20, 2014</small>
+      <div class="post-content">
+        <p>canvasをいじっている時に、パソコン（chrome on win/mac）では画像が表示されるのにiOSデバイスでは（どのブラウザでも）表示されないという奇妙な挙動に見舞われたのでその原因と対処法をまとめておきます。</p>
+
+<p>原因は、<span style="color: #ff0000;">元画像サイズよりもcontext.drawImageに指定したwidthのほうが大きかった</span>ことでした。PC上では足りない部分は透明で拡張されていましたが、iOS上ではそれがエラーにでもなるのか、画像全体が表示されなくなっていました。</p>
+
+<p>教訓：元画像のwidthを超えない範囲でdrawImageのwidthを設定する</p>
+
+        
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>blog.arc</h4>
+		<div class="row">
+			<div class="col-md-3">
+				<div class="form-group">
+					<p></p>
+					<a href="mailto:"></a>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/"></a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/"></a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="http://blog.arcturu.com//js/jquery-2.1.4.min.js"></script>
+<script src="http://blog.arcturu.com//js/bootstrap.min.js"></script>
+
+  </body>
+</html>

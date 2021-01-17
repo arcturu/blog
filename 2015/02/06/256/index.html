@@ -1,0 +1,253 @@
+  <!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+    <title> Node.js で類似文字列検索 twitter bot をつくる </title>
+    
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/css/theme.css" />
+    <link rel="stylesheet" href="/css/shortcodes.css" />
+    
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link href="" rel="alternate" type="application/rss+xml" title="arcturu&#39;s posts" />
+    
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Node.js で類似文字列検索 twitter bot をつくる">
+<meta name="twitter:url" content="http://blog.arcturu.com/2015/02/06/256/">
+<meta name="twitter:description" content="「きんいろモザイク中に登場する台詞と類似したツイートを検知して、類似部分の台詞とメタデータをリプライするボット」を作りました。@kinmoza_quotes
+アルゴリズムと twitter streaming api / REST api の使い方を簡単にまとめておきます。
+類似文字列検索アルゴリズム 類似文字列検索のライブラリとしては SimString などいろいろあるようですが、今回のケースでは辞書サイズはどんなに大きくても10000レコードくらいで収まりそうであることと、簡単な方法でも十分速そうなことから勉強も兼ねて自分で書くことにしました。
+文字列同士の類似度の評価には「それぞれの文字列の bi-gram をとって集合としての類似度を計算し、それを文字列の類似度とする」方針を取りました。
+str1 = &#39;hogefuga&#39;; -- bi-gramize -- {ho, og, ge, ef, fu, ug, ga} str2 = &#39;abcdef&#39;; -- bi-gramize -- {ab, bc, cd, de, ef} {ho, og, ge, ef, fu, ug, ga} AND {ab, bc, cd, de, ef} = {ef} {ho, og, ge, ef, fu, ug, ga} OR {ab, bc, cd, de, ef} = {ho, og, ge, ef, fu, ug, ga, ab, bc, cd, de}  ここで">
+
+
+
+</head>
+
+  <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-right">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">arcturu&#39;s posts</a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-right">
+            <ul class="nav navbar-nav navbar-right">
+                
+                
+            </ul>
+        </div>
+    </div>
+</nav>
+
+    <div class="container page-wrap">
+      <h1>Node.js で類似文字列検索 twitter bot をつくる</h1>
+      <small class="post-meta">2015年2月6日 08:04</small>
+      <div class="post-content">
+        
+
+<p>「きんいろモザイク中に登場する台詞と類似したツイートを検知して、類似部分の台詞とメタデータをリプライするボット」を作りました。<a href="http://twitter.com/kinmoza_quotes">@kinmoza_quotes</a></p>
+
+<p>アルゴリズムと twitter streaming api / REST api の使い方を簡単にまとめておきます。</p>
+
+<h3 id="類似文字列検索アルゴリズム">類似文字列検索アルゴリズム</h3>
+
+<p>類似文字列検索のライブラリとしては <a href="http://www.chokkan.org/software/simstring/index.html.ja">SimString</a> などいろいろあるようですが、今回のケースでは辞書サイズはどんなに大きくても10000レコードくらいで収まりそうであることと、簡単な方法でも十分速そうなことから勉強も兼ねて自分で書くことにしました。</p>
+
+<p>文字列同士の類似度の評価には「それぞれの文字列の bi-gram をとって集合としての類似度を計算し、それを文字列の類似度とする」方針を取りました。</p>
+
+<pre>str1 = 'hogefuga'; -- bi-gramize --> {ho, og, ge, ef, fu, ug, ga}
+str2 = 'abcdef';   -- bi-gramize --> {ab, bc, cd, de, ef}
+
+{ho, og, ge, ef, fu, ug, ga} AND {ab, bc, cd, de, ef}
+ = {ef}
+
+{ho, og, ge, ef, fu, ug, ga} OR {ab, bc, cd, de, ef}
+ = {ho, og, ge, ef, fu, ug, ga, ab, bc, cd, de}
+</pre>
+
+<p>ここで</p>
+
+<p>(bi-gram の積集合の要素数) / (bi-gram の和集合の要素数) = 1 / 11</p>
+
+<p>を str1 と str2 の類似度と定義します。あとで知りましたが、Jaccard 係数というそうです。</p>
+
+<p>この類似度の定義だと &#8216;hogehoge&#8217; と &#8216;hogeh&#8217; の類似度が 1 になってしまうといった欠点があります（繰り返しに弱い）。しかし繰り返しを含んだ単語の出現頻度はそれほど高くない気がするのでとりあえずこれでやってみることにしました。</p>
+
+<p>実際の処理内容は以下のような感じです。</p>
+
+<p>(1) bi-gram の転置インデックスを前処理で作る</p>
+
+<pre>dict = ['hoge', 'hage'] とするとき、これの bi-gram による転置インデックスtdictは
+tdict = {
+    'ho': [0],
+    'og': [0],
+    'ge': [0, 1],
+    'ha': [1],
+    'ag': [1]
+}
+となって、tdict['ge'] とアクセスすると 'ge' を bi-gram
+として含む単語のインデックスの配列 [0, 1] を返す。
+</pre>
+
+<p>(2) input (ツイート) が来たら、それを bi-gramize した集合の各要素について転置インデックスを引く</p>
+
+<p>(3) 転置インデックスを引いた時の戻り値（単語のインデックスの配列）それぞれに対して出現回数を数える</p>
+
+<p>擬似コードで書くとこんな感じです。</p>
+
+<pre>bigramize(input).forEach(function (one_bigram_element) {
+    tdict[one_bigram_element].forEach(function (dict_index) {
+        count[dict_index]++;
+    });
+});
+</pre>
+
+<p>これが終了すると count[dict_index] には dict の dict_index 番目の文字列を bi-gramize した集合と input を bi-gramize した集合の共通部分の要素数が入るので、</p>
+
+<pre>count[dict_index] / (bigramize(input).length
+                     + bigramize(dict[dict_index]).length
+                     - count[dict_index])
+</pre>
+
+<p>を計算すれば類似度が得られます。bigramize(input), bigramize(dict[dict_index]) はすでに求められているのでこの部分は定数で計算できます。Node.js (V8) のハッシュテーブルの foreach がどんな実装かは知りませんが、仮に同じ要素数分詰まっている密な配列を舐める時間と同じとすればナイーブに辞書の全要素を舐めるより速く計算可能です。</p>
+
+<p>O( (入力文字列長) * (転置インデックスの平均配列長 (tdict[hoge]の長さの平均)) )</p>
+
+<p>ソースコードは <a href="https://github.com/arcturu/kinmoza_quotes/blob/master/qs_server.js">https://github.com/arcturu/kinmoza_quotes/blob/master/qs_server.js</a> の search() です。</p>
+
+<p>TODO: bi-gramize で位置情報使うように改善する</p>
+
+<p>（もっといいアルゴリズム、教えてください(&gt;_&lt;)）</p>
+
+<h3 id="twitter-streaming-api-rest-api">twitter streaming api / REST api</h3>
+
+<h4 id="初期設定">初期設定</h4>
+
+<p>コンソールで</p>
+
+<pre>npm install twitter
+</pre>
+
+<p>スクリプトで</p>
+
+<pre lang="js">var twitter = require('twitter');
+bot = new twitter({
+    'consumer_key': '**************',
+    'consumer_secret': '**************',
+    'access_token_key': '**************',
+    'access_token_secret': '**************'
+});
+</pre>
+
+<h4 id="全世界のツイートを垂れ流してもらう">全世界のツイートを垂れ流してもらう</h4>
+
+<pre lang="js">bot.stream('statuses/sample', function (stream) {
+    stream.on('data', function (data) {
+        console.log(data); // json でツイートのメタデータ全部吐く
+        console.log(data.text); // ツイートの内容だけ
+    });
+});
+</pre>
+
+<h4 id="自分のタイムラインを取得">自分のタイムラインを取得</h4>
+
+<pre lang="js">bot.stream('user', function (stream) {
+    stream.on('data', function (data) {
+        console.log(data);
+    });
+});
+</pre>
+
+<h4 id="ツイート">ツイート</h4>
+
+<pre lang="js">bot.post('statuses/update', {
+    status: tweet, // ツイート文言
+    in_reply_to_status_id: status_id // リプライ先のツイートの id
+}, function (e, data) {
+        console.log(e); // エラーメッセージ（あれば）
+        console.log(data); // ツイートのメタデータ
+    });
+});
+</pre>
+
+<pre>bot.post('statuses/hogehoge', options, function ()...
+</pre>
+
+<p>のhogehoge, optionsには</p>
+
+<p><a href="https://dev.twitter.com/rest/public">https://dev.twitter.com/rest/public</a></p>
+
+<p>の対応する文言を入れればいいみたいです。例えば <a href="https://dev.twitter.com/rest/reference/get/statuses/retweets/%3Aid">GET statuses/retweets/:id</a> を叩きたいときは</p>
+
+<pre>bot.post('statuses/retweets', {
+    id: id_to_be_retweeted
+}, callback);
+</pre>
+
+<p>とします。</p>
+
+<h3 id="ソースコード">ソースコード</h3>
+
+<p><a href="https://github.com/arcturu/kinmoza_quotes">https://github.com/arcturu/kinmoza_quotes</a></p>
+
+<p>twio.js が twitter streaming api を使っている twitter とのやりとり用のサーバで、qs_server.js が検索サーバです。cli.js で簡単に検索することもできます。</p>
+
+        <div id="disqus_thread"></div>
+<script type="application/javascript">
+    var disqus_config = function () {
+    
+    
+    
+    };
+    (function() {
+        if (["localhost", "127.0.0.1"].indexOf(window.location.hostname) != -1) {
+            document.getElementById('disqus_thread').innerHTML = 'Disqus comments not available by default when the website is previewed locally.';
+            return;
+        }
+        var d = document, s = d.createElement('script'); s.async = true;
+        s.src = '//' + "arcturu" + '.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="https://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+      </div>
+    </div>
+    <footer class="site-footer">
+	<div class="container">
+		<h4>arcturu&#39;s posts</h4>
+		<div class="row">
+
+			<div class="col-md-3">
+				<div class="form-group">
+					<p>
+						<span class="fa fa-fw fa-github"></span>
+						<a href="https://github.com/arcturu">arcturu</a>
+						<br>
+						<span class="fa fa-fw fa-twitter"></span>
+						<a href="https://twitter.com/_arcturu">_arcturu</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</footer>
+
+    <script src="/js/jquery-2.1.4.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+
+
+  </body>
+</html>
